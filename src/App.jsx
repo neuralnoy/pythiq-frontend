@@ -25,7 +25,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Right side - Company Info */}
+                {/* Right side - Company Info with Video */}
                 <div 
                   className="hidden lg:block relative bg-cover bg-center"
                   style={{
@@ -33,17 +33,25 @@ function App() {
                   }}
                 >
                   <div className="absolute inset-0 bg-primary/30 backdrop-blur-sm">
-                    <div className="p-12 h-full flex flex-col justify-center">
-                      <div className="card">
-                        <div className="card-body">
-                          <h1 className="text-4xl font-bold text-white">Tailored AI Solutions</h1>
-                          <p className="mt-4 text-white/90">
-                            Welcome to our platform. We provide innovative solutions
-                            for your business needs. Join us to experience the next
-                            generation of technology.
-                          </p>
-                        </div>
+                    <div className="flex flex-col items-center justify-center h-full p-8 text-white">
+                      <h1 className="text-4xl font-bold mb-4">Tailored AI Solutions</h1>
+                      <div className="w-full max-w-lg rounded-lg overflow-hidden shadow-xl bg-black/20">
+                        <video 
+                          className="w-full h-auto"
+                          autoPlay 
+                          muted 
+                          loop 
+                          playsInline
+                          controls
+                        >
+                          <source src="/demo.mp4" type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
                       </div>
+                      <p className="mt-6 text-lg text-center max-w-2xl">
+                        Experience the power of AI-driven solutions tailored to your needs.
+                        Our platform provides intelligent automation and insights to transform your workflow.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -51,10 +59,8 @@ function App() {
             ) : (
               <Navigate to="/knowledge" replace />
             )
-          } 
+          }
         />
-        
-        {/* Protected Routes */}
         <Route 
           path="/knowledge" 
           element={user ? <div>Knowledge Base</div> : <Navigate to="/" replace />} 
@@ -67,9 +73,6 @@ function App() {
           path="/search" 
           element={user ? <div>Search</div> : <Navigate to="/" replace />} 
         />
-
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );
