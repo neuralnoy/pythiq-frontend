@@ -4,6 +4,7 @@ import ProfileSettings from '../pages/ProfileSettings';
 import KnowledgeBase from '../pages/KnowledgeBase';
 import Chat from '../pages/Chat';
 import Search from '../pages/Search';
+import KnowledgeBaseDetails from '../pages/KnowledgeBaseDetails';
 
 export const routes = [
   {
@@ -29,6 +30,11 @@ export const routes = [
   {
     path: '/search',
     element: <Search />,
+    protected: true
+  },
+  {
+    path: '/knowledge/:id',
+    element: <KnowledgeBaseDetails />,
     protected: true
   },
 ];

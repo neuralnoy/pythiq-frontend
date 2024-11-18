@@ -62,6 +62,20 @@ export const useKnowledgeBase = () => {
     }
   };
 
+  const getKnowledgeBaseById = async (id) => {
+    try {
+      const knowledgeBase = knowledgeBases.find(kb => kb.id === id);
+      if (knowledgeBase) {
+        return knowledgeBase;
+      }
+      // If not found in state, fetch from API
+      const data = await knowledgeBaseService.getKnowledgeBaseById(id, token);
+      return data;
+    } catch (err) {
+      throw new Error('Failed to fetch knowledge base');
+    }
+  };
+
   useEffect(() => {
     loadKnowledgeBases();
   }, [token]);
@@ -72,6 +86,7 @@ export const useKnowledgeBase = () => {
     error,
     createKnowledgeBase,
     deleteKnowledgeBase,
-    renameKnowledgeBase
+    renameKnowledgeBase,
+    getKnowledgeBaseById
   };
 }; 
