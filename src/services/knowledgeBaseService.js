@@ -26,7 +26,7 @@ export const knowledgeBaseService = {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.title || 'Failed to create knowledge base');
+      throw new Error(data.detail || 'Title already exists');
     }
     return data;
   },
@@ -39,5 +39,20 @@ export const knowledgeBaseService = {
     if (!response.ok) {
       throw new Error('Failed to delete knowledge base');
     }
+  },
+
+  async renameKnowledgeBase(id, newTitle, token) {
+    const response = await fetch(`${API_URL}/knowledge-bases/${id}`, {
+      method: 'PATCH',
+      headers: getHeaders(token),
+      body: JSON.stringify({ title: newTitle }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.detail || 'Failed to rename knowledge base');
+    }
+    return data;
   }
 };

@@ -18,7 +18,7 @@ const LandingPage = () => {
           {/* Navigation Bar */}
           <div className="flex justify-between items-center p-4">
             <NavBrand />
-            <label htmlFor="auth-drawer" className="btn btn-primary drawer-button">
+            <label htmlFor="auth-drawer" className="btn btn-primary btn-sm drawer-button">
               Sign In
             </label>
           </div>
