@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase';
 import { DocumentPlusIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import DocumentUploadModal from '../components/knowledge-base/DocumentUploadModal';
 import DocumentsTable from '../components/knowledge-base/DocumentsTable';
+import { useAuth } from '../context/AuthContext';
 
 const KnowledgeBaseDetails = () => {
   const { id } = useParams();
@@ -12,6 +13,10 @@ const KnowledgeBaseDetails = () => {
   const [knowledgeBase, setKnowledgeBase] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const { token } = useAuth();
+  const [shouldRefreshDocs, setShouldRefreshDocs] = useState(0);
+
+  console.log('Token in KnowledgeBaseDetails:', token);
 
   useEffect(() => {
     const loadKnowledgeBase = async () => {
@@ -27,6 +32,11 @@ const KnowledgeBaseDetails = () => {
 
     loadKnowledgeBase();
   }, [id, getKnowledgeBaseById]);
+
+  const handleUploadSuccess = useCallback(() => {
+    setShouldRefreshDocs(prev => prev + 1);
+    setIsUploadModalOpen(false);
+  }, []);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -45,12 +55,18 @@ const KnowledgeBaseDetails = () => {
         </button>
       </div>
 
-      <DocumentsTable knowledgeBaseId={id} />
+      <DocumentsTable 
+        knowledgeBaseId={id} 
+        token={token}
+        shouldRefresh={shouldRefreshDocs}
+      />
 
       <DocumentUploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
+        onUploadSuccess={handleUploadSuccess}
         knowledgeBaseId={id}
+        token={token}
       />
     </div>
   );

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { documentService } from '../../services/documentService';
 
-const DocumentUploadModal = ({ isOpen, onClose, knowledgeBaseId }) => {
+const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId, token }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
 
@@ -10,9 +11,9 @@ const DocumentUploadModal = ({ isOpen, onClose, knowledgeBaseId }) => {
     setUploading(true);
     
     try {
-      // TODO: Implement document upload logic
-      console.log('Uploading files for knowledge base:', knowledgeBaseId);
-      onClose();
+      await documentService.uploadDocument(knowledgeBaseId, files[0], token);
+      setFiles([]);
+      onUploadSuccess();
     } catch (error) {
       console.error('Upload failed:', error);
     } finally {
@@ -31,7 +32,6 @@ const DocumentUploadModal = ({ isOpen, onClose, knowledgeBaseId }) => {
             <input
               type="file"
               className="file-input file-input-bordered w-full"
-              multiple
               accept=".pdf,.doc,.docx,.xlsx,.ppt,.txt"
               onChange={(e) => setFiles(Array.from(e.target.files))}
               required
@@ -64,7 +64,9 @@ const DocumentUploadModal = ({ isOpen, onClose, knowledgeBaseId }) => {
 DocumentUploadModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  knowledgeBaseId: PropTypes.string.isRequired
+  onUploadSuccess: PropTypes.func.isRequired,
+  knowledgeBaseId: PropTypes.string.isRequired,
+  token: PropTypes.string.isRequired
 };
 
 export default DocumentUploadModal; 

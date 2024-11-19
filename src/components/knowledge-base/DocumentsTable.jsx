@@ -1,29 +1,30 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   DocumentIcon, 
   TrashIcon,
   ArrowDownTrayIcon 
 } from '@heroicons/react/24/outline';
+import { documentService } from '../../services/documentService';
 
-const DocumentsTable = ({ knowledgeBaseId }) => {
+const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadDocuments = async () => {
-      try {
-        // TODO: Implement API call to fetch documents
-        setDocuments([]);
-      } catch (error) {
-        console.error('Failed to load documents:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadDocuments = useCallback(async () => {
+    try {
+      const data = await documentService.getDocuments(knowledgeBaseId, token);
+      setDocuments(data);
+    } catch (error) {
+      console.error('Failed to load documents:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [knowledgeBaseId, token]);
 
+  useEffect(() => {
     loadDocuments();
-  }, [knowledgeBaseId]);
+  }, [loadDocuments, shouldRefresh]);
 
   if (isLoading) {
     return <div className="loading loading-spinner loading-lg"></div>;
@@ -79,7 +80,9 @@ const DocumentsTable = ({ knowledgeBaseId }) => {
 };
 
 DocumentsTable.propTypes = {
-  knowledgeBaseId: PropTypes.string.isRequired
+  knowledgeBaseId: PropTypes.string.isRequired,
+  token: PropTypes.string.isRequired,
+  shouldRefresh: PropTypes.bool
 };
 
 export default DocumentsTable; 
