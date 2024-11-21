@@ -10,10 +10,10 @@ const AuthContainer = () => {
   const [password, setPassword] = useState('');
   const { login, register } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, { rememberMe }) => {
     e.preventDefault();
     if (isLogin) {
-      await login(email, password);
+      await login(email, password, rememberMe);
     } else {
       await register(email, password);
     }

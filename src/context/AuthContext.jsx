@@ -7,13 +7,15 @@ const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }) => {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
         },
+        credentials: 'include',
         body: formData
       });
       
@@ -40,8 +43,11 @@ export const AuthProvider = ({ children }) => {
         email: email,
         id: data.user?.id 
       };
+      
       setUser(userData);
-      setToken(data.access_token);
+      if (rememberMe) {
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
       
       navigate('/knowledge', { replace: true });
     } catch (error) {
@@ -79,16 +85,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    navigate('/', { replace: true });
+  const logout = async () => {
+    try {
+      await fetch('http://localhost:8000/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('user');
+      setUser(null);
+      navigate('/', { replace: true });
+    }
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      token, 
       loading, 
       error, 
       login,

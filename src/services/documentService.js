@@ -1,20 +1,14 @@
 const API_URL = 'http://localhost:8000/api';
 
-const getHeaders = (token) => ({
-  'Authorization': `Bearer ${token}`
-});
-
 export const documentService = {
-  async uploadDocument(knowledgeBaseId, file, token) {
+  async uploadDocument(knowledgeBaseId, file) {
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const response = await fetch(`${API_URL}/documents/${knowledgeBaseId}/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData
       });
 
@@ -31,10 +25,10 @@ export const documentService = {
     }
   },
 
-  async getDocuments(knowledgeBaseId, token) {
+  async getDocuments(knowledgeBaseId) {
     console.log('Fetching documents for KB:', knowledgeBaseId);
     const response = await fetch(`${API_URL}/documents/${knowledgeBaseId}`, {
-      headers: getHeaders(token)
+      credentials: 'include'
     });
 
     if (!response.ok) {
@@ -46,10 +40,10 @@ export const documentService = {
     return data;
   },
 
-  async deleteDocument(knowledgeBaseId, documentId, token) {
+  async deleteDocument(knowledgeBaseId, documentId) {
     const response = await fetch(`${API_URL}/documents/${knowledgeBaseId}/${documentId}`, {
       method: 'DELETE',
-      headers: getHeaders(token)
+      credentials: 'include'
     });
 
     if (!response.ok) {
@@ -57,13 +51,13 @@ export const documentService = {
     }
   },
 
-  async renameDocument(knowledgeBaseId, documentId, newName, token) {
+  async renameDocument(knowledgeBaseId, documentId, newName) {
     const response = await fetch(
       `${API_URL}/documents/${knowledgeBaseId}/${documentId}/rename`,
       {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ name: newName })
@@ -78,11 +72,11 @@ export const documentService = {
     return await response.json();
   },
 
-  async getDownloadUrl(knowledgeBaseId, documentId, token) {
+  async getDownloadUrl(knowledgeBaseId, documentId) {
     const response = await fetch(
       `${API_URL}/documents/${knowledgeBaseId}/${documentId}/download`,
       { 
-        headers: getHeaders(token),
+        credentials: 'include',
         responseType: 'blob'
       }
     );
@@ -109,12 +103,12 @@ export const documentService = {
     document.body.removeChild(a);
   },
 
-  async toggleDocumentEnabled(knowledgeBaseId, documentId, token) {
+  async toggleDocumentEnabled(knowledgeBaseId, documentId) {
     const response = await fetch(
       `${API_URL}/documents/${knowledgeBaseId}/${documentId}/toggle`,
       {
         method: 'PATCH',
-        headers: getHeaders(token)
+        credentials: 'include'
       }
     );
 

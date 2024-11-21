@@ -1,14 +1,9 @@
 const API_URL = 'http://localhost:8000/api';
 
-const getHeaders = (token) => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${token}`
-});
-
 export const knowledgeBaseService = {
-  async getKnowledgeBases(token) {
+  async getKnowledgeBases() {
     const response = await fetch(`${API_URL}/knowledge-bases/`, {
-      headers: getHeaders(token)
+      credentials: 'include'
     });
     if (!response.ok) {
       throw new Error('Failed to fetch knowledge bases');
@@ -16,10 +11,13 @@ export const knowledgeBaseService = {
     return await response.json();
   },
 
-  async createKnowledgeBase(title, token) {
+  async createKnowledgeBase(title) {
     const response = await fetch(`${API_URL}/knowledge-bases/`, {
       method: 'POST',
-      headers: getHeaders(token),
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ title }),
     });
     
@@ -31,20 +29,23 @@ export const knowledgeBaseService = {
     return data;
   },
 
-  async deleteKnowledgeBase(id, token) {
+  async deleteKnowledgeBase(id) {
     const response = await fetch(`${API_URL}/knowledge-bases/${id}/`, {
       method: 'DELETE',
-      headers: getHeaders(token)
+      credentials: 'include'
     });
     if (!response.ok) {
       throw new Error('Failed to delete knowledge base');
     }
   },
 
-  async renameKnowledgeBase(id, newTitle, token) {
+  async renameKnowledgeBase(id, newTitle) {
     const response = await fetch(`${API_URL}/knowledge-bases/${id}`, {
       method: 'PATCH',
-      headers: getHeaders(token),
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ title: newTitle }),
     });
     
