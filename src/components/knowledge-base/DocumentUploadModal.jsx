@@ -1,23 +1,54 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { documentService } from '../../services/documentService';
+import { getAcceptedFileTypes, formatFileTypes } from '../../utils/fileTypes';
 
 const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId, token }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
 
   const handleUpload = async (e) => {
     e.preventDefault();
     setUploading(true);
     
     try {
-      await documentService.uploadDocument(knowledgeBaseId, files[0], token);
+      const uploadPromises = files.map(async (file) => {
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: 0
+        }));
+        
+        try {
+          await documentService.uploadDocument(knowledgeBaseId, file, token);
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: 100
+          }));
+          return { success: true, file: file.name };
+        } catch (error) {
+          console.error(`Failed to upload ${file.name}:`, error);
+          return { success: false, file: file.name, error: error.message };
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const failures = results.filter(r => !r.success);
+      
+      if (failures.length > 0) {
+        console.error('Some files failed to upload:', failures);
+      }
+      
+      if (results.some(r => r.success)) {
+        onUploadSuccess();
+      }
+      
       setFiles([]);
-      onUploadSuccess();
     } catch (error) {
       console.error('Upload failed:', error);
     } finally {
       setUploading(false);
+      setUploadProgress({});
     }
   };
 
@@ -32,14 +63,37 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
             <input
               type="file"
               className="file-input file-input-bordered w-full"
-              accept=".pdf,.doc,.docx,.xlsx,.ppt,.txt"
+              accept={getAcceptedFileTypes()}
               onChange={(e) => setFiles(Array.from(e.target.files))}
+              multiple
               required
             />
-            <p className="text-sm text-gray-500 mt-2">
-              Supported formats: PDF, DOCX, EXCEL, PPT, TXT
-            </p>
+            <div className="text-sm text-gray-500 mt-2">
+              <p className="mb-1">Supported formats:</p>
+              <p className="font-mono text-xs leading-relaxed">
+                {formatFileTypes()}
+              </p>
+            </div>
           </div>
+
+          {files.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {files.map(file => (
+                <div key={file.name} className="text-sm">
+                  <div className="flex justify-between mb-1">
+                    <span>{file.name}</span>
+                    <span>{uploadProgress[file.name] || 0}%</span>
+                  </div>
+                  <progress 
+                    className="progress progress-primary w-full" 
+                    value={uploadProgress[file.name] || 0} 
+                    max="100"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="modal-action">
             <button type="button" className="btn" onClick={onClose}>
               Cancel
@@ -49,7 +103,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
               className={`btn btn-primary ${uploading ? 'loading' : ''}`}
               disabled={uploading || files.length === 0}
             >
-              Upload
+              Upload {files.length > 0 ? `(${files.length} files)` : ''}
             </button>
           </div>
         </form>

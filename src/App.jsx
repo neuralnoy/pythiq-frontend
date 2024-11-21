@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import { routes } from './routes/index';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ function App() {
           />
         ))}
       </Routes>
+      <Toaster position="top-right" />
     </div>
   );
 }

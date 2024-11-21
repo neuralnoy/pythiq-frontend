@@ -1,13 +1,20 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
+import { format, parseISO } from 'date-fns';
 import { 
   DocumentIcon, 
-  TrashIcon,
   ArrowDownTrayIcon,
-  PencilSquareIcon
+  TrashIcon,
+  PencilIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { documentService } from '../../services/documentService';
-import DocumentModal from './DocumentModal';
+import FileIcon from '../common/FileIcon';
+import ConfirmationModal from '../common/ConfirmationModal';
+import { formatFileSize } from '../../utils/formatters';
+import { toast } from 'react-hot-toast';
 
 const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documents, setDocuments] = useState([]);
@@ -15,6 +22,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [documentToRename, setDocumentToRename] = useState(null);
   const [newName, setNewName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const MAX_FILENAME_LENGTH = 30;
   const MAX_INPUT_LENGTH = 50;
@@ -33,6 +41,9 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     }
   }, [knowledgeBaseId, token]);
 
+  const filteredDocuments = documents
+    .filter(doc => doc.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments, shouldRefresh]);
@@ -43,16 +54,29 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   };
 
   const handleRenameConfirm = async () => {
-    if (!newName.trim() || newName === documentToRename.name) return;
+    if (!newName.trim() || newName === documentToRename.name) {
+      setDocumentToRename(null);
+      return;
+    }
 
     try {
-      await documentService.renameDocument(knowledgeBaseId, documentToRename.id, newName, token);
+      const updatedDoc = await documentService.renameDocument(
+        knowledgeBaseId,
+        documentToRename.id,
+        newName,
+        token
+      );
+      
       setDocuments(documents.map(d => 
-        d.id === documentToRename.id ? { ...d, name: newName } : d
+        d.id === documentToRename.id ? updatedDoc : d
       ));
+      
+      toast.success('Document renamed successfully');
     } catch (error) {
       console.error('Failed to rename document:', error);
-      alert('Failed to rename document');
+      toast.error(error.message || 'Failed to rename document');
+    } finally {
+      setDocumentToRename(null);
     }
   };
 
@@ -91,6 +115,26 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     }
   };
 
+  const renderParsingStatus = (status) => {
+    switch (status) {
+      case 'done':
+        return (
+          <div className="flex items-center text-success">
+            <CheckCircleIcon className="w-5 h-5 mr-1" />
+            <span>Done</span>
+          </div>
+        );
+      case 'pending':
+      default:
+        return (
+          <div className="flex items-center text-warning">
+            <ClockIcon className="w-5 h-5 mr-1" />
+            <span>Pending</span>
+          </div>
+        );
+    }
+  };
+
   if (isLoading) {
     return <div className="loading loading-spinner loading-lg"></div>;
   }
@@ -107,144 +151,168 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     );
   }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
-    <div className="overflow-x-auto">
-      <table className="table w-full">
-        <thead>
-          <tr>
-            <th className="w-[300px]">Name</th>
-            <th>Upload Date</th>
-            <th>Enable</th>
-            <th>Parsing Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((doc) => (
-            <tr key={doc.id}>
-              <td className="font-medium">
-                <div className="tooltip" data-tip={doc.name}>
-                  <span className="block truncate max-w-[280px]">
-                    {doc.name.length > MAX_FILENAME_LENGTH 
-                      ? `${doc.name.slice(0, MAX_FILENAME_LENGTH)}...` 
-                      : doc.name
-                    }
-                  </span>
-                </div>
-              </td>
-              <td>{formatDate(doc.uploaded_at)}</td>
-              <td>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-primary"
-                  checked={doc.enabled}
-                  onChange={() => handleToggleEnable(doc.id)}
-                />
-              </td>
-              <td>
-                <span className={`badge ${getStatusBadgeColor(doc.parsing_status)}`}>
-                  {doc.parsing_status || 'Pending'}
-                </span>
-              </td>
-              <td>
-                <div className="flex gap-2">
-                  <button 
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => handleRenameClick(doc)}
-                    title="Rename"
-                  >
-                    <PencilSquareIcon className="h-4 w-4" />
-                  </button>
-                  <button 
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => handleDownload(doc)}
-                    title="Download"
-                  >
-                    <ArrowDownTrayIcon className="h-4 w-4" />
-                  </button>
-                  <button 
-                    className="btn btn-ghost btn-sm text-error"
-                    onClick={() => handleDeleteClick(doc)}
-                    title="Delete"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <DocumentModal
-        isOpen={!!documentToRename}
-        onClose={() => {
-          setDocumentToRename(null);
-          setNewName('');
-        }}
-        onConfirm={handleRenameConfirm}
-        title="Rename Document"
-        confirmText="Save"
-        type="primary"
-      >
-        <div className="form-control">
+    <div className="space-y-4">
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          </div>
           <input
             type="text"
-            className="input input-bordered w-full"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value.slice(0, MAX_INPUT_LENGTH))}
-            placeholder="Enter new name"
-            maxLength={MAX_INPUT_LENGTH}
-            autoFocus
+            className="input input-bordered w-full pl-10"
+            placeholder="Search documents..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <label className="label">
-            <span className="label-text-alt">
-              {newName.length}/{MAX_INPUT_LENGTH} characters
-            </span>
-          </label>
         </div>
-      </DocumentModal>
+      </div>
 
-      <DocumentModal
+      <div className="border rounded-lg">
+        <div className="overflow-x-auto">
+          <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+            <table className="table w-full">
+              <thead className="sticky top-0 bg-base-100 z-10">
+                <tr>
+                  <th className="bg-base-100">Name</th>
+                  <th className="bg-base-100">Size</th>
+                  <th className="bg-base-100">Enabled</th>
+                  <th className="bg-base-100">Parsing Status</th>
+                  <th className="bg-base-100">Uploaded</th>
+                  <th className="bg-base-100">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDocuments.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-4">
+                      {documents.length === 0 ? (
+                        <div className="text-gray-500">
+                          No documents uploaded yet
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">
+                          No documents match your search
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredDocuments.map((doc) => (
+                    <tr key={doc.id} className="hover">
+                      <td>
+                        <div className="flex items-center space-x-3">
+                          <FileIcon filename={doc.name} className="w-5 h-5 flex-shrink-0" />
+                          <span className="truncate max-w-xs font-medium">{doc.name}</span>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap">
+                        {formatFileSize(doc.size)}
+                      </td>
+                      <td>
+                        <div className="flex items-center space-x-2">
+                          <label className="cursor-pointer label">
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-primary toggle-sm"
+                              checked={doc.enabled}
+                              onChange={() => handleToggleEnable(doc.id)}
+                            />
+                            <span className="label-text ml-2">
+                              {doc.enabled ? 'Yes' : 'No'}
+                            </span>
+                          </label>
+                        </div>
+                      </td>
+                      <td>
+                        {renderParsingStatus(doc.parsing_status)}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        {format(parseISO(doc.uploaded_at), 'MMM d, yyyy')}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleRenameClick(doc)}
+                            className="btn btn-sm btn-ghost"
+                            title="Rename"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDownload(doc)}
+                            className="btn btn-sm btn-ghost"
+                            title="Download"
+                          >
+                            <ArrowDownTrayIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(doc)}
+                            className="btn btn-sm btn-ghost text-error"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <ConfirmationModal
         isOpen={!!documentToDelete}
         onClose={() => setDocumentToDelete(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Document"
         message={`Are you sure you want to delete "${documentToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        type="error"
       />
+
+      <div className={`modal ${documentToRename ? 'modal-open' : ''}`}>
+        <div className="modal-box">
+          <h3 className="font-bold text-lg mb-4">Rename Document</h3>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            handleRenameConfirm();
+          }}>
+            <div className="form-control">
+              <input
+                type="text"
+                className="input input-bordered"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Enter new name"
+                autoFocus
+              />
+            </div>
+            <div className="modal-action">
+              <button 
+                type="button"
+                className="btn" 
+                onClick={() => setDocumentToRename(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                className="btn btn-primary"
+                disabled={!newName.trim() || newName === documentToRename?.name}
+              >
+                Rename
+              </button>
+            </div>
+          </form>
+        </div>
+        <div className="modal-backdrop" onClick={() => setDocumentToRename(null)}>
+          <button className="cursor-default">Close</button>
+        </div>
+      </div>
     </div>
   );
-};
-
-const getStatusBadgeColor = (status) => {
-  switch (status?.toLowerCase()) {
-    case 'completed':
-      return 'badge-success';
-    case 'processing':
-      return 'badge-warning';
-    case 'failed':
-      return 'badge-error';
-    default:
-      return 'badge-ghost';
-  }
-};
-
-DocumentsTable.propTypes = {
-  knowledgeBaseId: PropTypes.string.isRequired,
-  token: PropTypes.string.isRequired,
-  shouldRefresh: PropTypes.number
 };
 
 export default DocumentsTable; 
