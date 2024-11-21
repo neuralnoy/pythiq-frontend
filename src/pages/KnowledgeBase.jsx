@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DocumentPlusIcon, ServerStackIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { RectangleStackIcon, PlusIcon, ServerStackIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useKnowledgeBase } from '../hooks/useKnowledgeBase';
 import KnowledgeBaseCard from '../components/knowledge-base/KnowledgeBaseCard';
 import CreateKnowledgeBaseModal from '../components/knowledge-base/CreateKnowledgeBaseModal';
@@ -60,7 +60,7 @@ const KnowledgeBase = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search knowledge bases..."
+              placeholder="Search your bookshelves..."
               className="input input-bordered w-full pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -72,19 +72,20 @@ const KnowledgeBase = () => {
           className="btn btn-primary btn-sm whitespace-nowrap"
           onClick={() => setIsModalOpen(true)}
         >
-          <DocumentPlusIcon className="w-5 h-5 mr-2" />
-          Add New Knowledge Base
+          <PlusIcon className="w-4 h-4" />
+          <RectangleStackIcon className="w-5 h-5" />
+          Add New Bookshelf
         </button>
       </div>
 
       {filteredKnowledgeBases.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
-          <ServerStackIcon className="w-24 h-24 text-gray-400 mb-4" />
+          <RectangleStackIcon className="w-24 h-24 text-gray-400 mb-4" />
           <p className="text-xl text-gray-500">
-            {searchQuery ? "No matching knowledge bases found" : "No knowledge bases found"}
+            {searchQuery ? "No matching bookshelf found" : "No bookshelf found"}
           </p>
           {!searchQuery && (
-            <p className="text-gray-400">Click the button above to create your first knowledge base</p>
+            <p className="text-gray-400">Click the button above to create your first bookshelf</p>
           )}
         </div>
       ) : (

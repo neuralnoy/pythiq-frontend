@@ -14,22 +14,14 @@ const LandingPage = () => {
     document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
   };
   
-  const calculateMonthlyPrice = (storage) => {
-    if (storage <= 200) return 49;
-    const additionalStorage = storage - 200; // MB above base storage
-    const additionalPrice = Math.floor(additionalStorage / 100) * 5; // $5 per 100MB
-    return 49 + additionalPrice; // Cap at 199
+  const calculatePrice = (storage, tokens) => {
+    const baseStoragePrice = storage * 0.01; // $0.01 per MB
+    const tokenPrice = (tokens / 1_000_000) * 3; // $3 per million tokens
+    return Math.round((baseStoragePrice + tokenPrice) * 100) / 100 + 5; // Round to 2 decimal places
   };
   
-  const calculateYearlyPrice = (storage) => {
-    if (storage <= 200) return 489;
-    const additionalStorage = storage - 200; // MB above base storage
-    const additionalPrice = Math.floor(additionalStorage / 100) * 50; // $50 per 100MB
-    return 489 + additionalPrice; // Cap at 1979
-  };
-  
-  const [monthlyStorage, setMonthlyStorage] = useState(200);
-  const [yearlyStorage, setYearlyStorage] = useState(200);
+  const [storage, setStorage] = useState(0);
+  const [tokens, setTokens] = useState(0);
 
   return (
     <div className="drawer drawer-end">
@@ -125,109 +117,100 @@ const LandingPage = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
                 Simple, transparent pricing
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Free Trial Card */}
                 <div className="card bg-base-100 shadow-xl">
                   <div className="card-body">
                     <h3 className="card-title text-xl mb-2">Free Trial</h3>
                     <div className="text-3xl font-bold mb-4">$0</div>
-                    <p className="text-base-content/70 mb-4">3 days of full access</p>
+                    <p className="text-base-content/70 mb-4">1 day of access</p>
                     <ul className="space-y-2 mb-8">
-                      <li>✓ All features included</li>
+                      <li>✓ Up to 5 documents</li>
+                      <li>✓ Max 50MB storage</li>
+                      <li>✓ Up to 5M tokens</li>
                       <li>✓ No credit card required</li>
-                      <li>✓ 50 MB storage</li>
                     </ul>
                     <label htmlFor="auth-drawer" className="btn btn-primary w-full">
                       Start Trial
                     </label>
                   </div>
                 </div>
+
+                {/* Pay as You Go Card */}
                 <div className="card bg-primary text-primary-content shadow-xl">
-                  <div className="card-body flex flex-col justify-between">
-                    <div>
-                      <div className="h-40">
-                        <h3 className="card-title text-xl mb-2">Monthly</h3>
-                        <div className="text-3xl font-bold mb-4">
-                          ${calculateMonthlyPrice(monthlyStorage)}
-                        </div>
-                        <p className="text-primary-content/70">per month</p>
-                      </div>
-                      <div className="form-control w-full mb-4">
-                        <label className="label">
-                          <span className="label-text text-primary-content">Storage: {monthlyStorage} MB</span>
-                        </label>
-                        <input 
-                          type="range" 
-                          min="200" 
-                          max="5000" 
-                          value={monthlyStorage}
-                          onChange={(e) => setMonthlyStorage(Number(e.target.value))}
-                          step="100"
-                          className="range range-secondary"
-                        />
-                        <div className="w-full flex justify-between text-xs px-2 text-primary-content/70">
-                          <span>200MB</span>
-                          <span>5GB</span>
-                        </div>
-                      </div>
-                      <ul className="space-y-2 mb-8">
-                        <li>✓ Unlimited documents</li>
-                        <li>✓ {monthlyStorage} MB storage</li>
-                        <li>✓ Priority support</li>
-                      </ul>
+                  <div className="card-body">
+                    <h3 className="card-title text-xl mb-2">Pay as You Go</h3>
+                    <div className="text-3xl font-bold mb-4">
+                      ${calculatePrice(storage, tokens)}
                     </div>
-                    <label htmlFor="auth-drawer" className="btn btn-secondary w-full mt-auto">
-                      Start with Monthly
+                    <p className="text-primary-content/70 mb-4">per month</p>
+                    
+                    <div className="form-control w-full mb-4">
+                      <label className="label">
+                        <span className="label-text text-primary-content">Storage: {storage} MB</span>
+                        <span className="label-text text-primary-content">${(storage * 0.01).toFixed(2)}</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="10000" 
+                        value={storage}
+                        onChange={(e) => setStorage(Number(e.target.value))}
+                        step="50"
+                        className="range range-secondary"
+                      />
+                      <div className="w-full flex justify-between text-xs px-2 text-primary-content/70">
+                        <span>0MB</span>
+                        <span>10GB</span>
+                      </div>
+                    </div>
+
+                    <div className="form-control w-full mb-4">
+                      <label className="label">
+                        <span className="label-text text-primary-content">Tokens: {(tokens / 1_000_000).toFixed(1)}M</span>
+                        <span className="label-text text-primary-content">${(tokens / 1_000_000 * 3).toFixed(2)}</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="50000000" 
+                        value={tokens}
+                        onChange={(e) => setTokens(Number(e.target.value))}
+                        step="1000000"
+                        className="range range-secondary"
+                      />
+                      <div className="w-full flex justify-between text-xs px-2 text-primary-content/70">
+                        <span>0M</span>
+                        <span>50M</span>
+                      </div>
+                      <div className="text-xs text-primary-content/70 mt-1">
+                        1 token ≈ 4 characters in English text
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2 mb-8">
+                      <li>✓ Monthly fixed cost of $5</li>
+                      <li>✓ $0.01 per MB</li>
+                      <li>✓ $3 per 1M tokens</li>
+                      <li>✓ Same price for input/output tokens</li>
+                      <li>✓ Unlimited documents</li>
+                    </ul>
+                    <label htmlFor="auth-drawer" className="btn btn-secondary w-full">
+                      Get Started
                     </label>
                   </div>
                 </div>
-                <div className="card bg-base-100 shadow-xl">
-                  <div className="card-body flex flex-col justify-between">
-                    <div>
-                      <div className="h-40">
-                        <h3 className="card-title text-xl mb-2">Yearly</h3>
-                        <div className="text-3xl font-bold mb-4">
-                          ${calculateYearlyPrice(yearlyStorage)}
-                        </div>
-                        <p className="text-base-content/70">per year (2 months free!)</p>
-                      </div>
-                      <div className="form-control w-full mb-4">
-                        <label className="label">
-                          <span className="label-text">Storage: {yearlyStorage} MB</span>
-                        </label>
-                        <input 
-                          type="range" 
-                          min="200" 
-                          max="5000" 
-                          value={yearlyStorage}
-                          onChange={(e) => setYearlyStorage(Number(e.target.value))}
-                          step="100"
-                          className="range range-primary"
-                        />
-                        <div className="w-full flex justify-between text-xs px-2 text-base-content/70">
-                          <span>200MB</span>
-                          <span>5GB</span>
-                        </div>
-                      </div>
-                      <ul className="space-y-2 mb-8">
-                        <li>✓ Unlimited documents</li>
-                        <li>✓ {yearlyStorage} MB storage</li>
-                        <li>✓ Premium support</li>
-                        <li>✓ Save up to17% annually</li>
-                      </ul>
-                    </div>
-                    <label htmlFor="auth-drawer" className="btn btn-primary w-full mt-auto">
-                      Start with Yearly
-                    </label>
-                  </div>
-                </div>
+
+                {/* Enterprise Card */}
                 <div className="card bg-base-100 shadow-xl">
                   <div className="card-body">
                     <h3 className="card-title text-xl mb-2">Enterprise</h3>
                     <div className="text-3xl font-bold mb-4">Custom</div>
                     <p className="text-base-content/70 mb-4">Tailored to your needs</p>
                     <ul className="space-y-2 mb-8">
-                      <li>✓ Unlimited storage</li>
-                      <li>✓ Custom integrations</li>
+                      <li>✓ Custom storage limits</li>
+                      <li>✓ Custom token allocation</li>
+                      <li>✓ Volume discounts</li>
                       <li>✓ Dedicated support</li>
                       <li>✓ SLA guarantees</li>
                       <li>✓ Team management</li>

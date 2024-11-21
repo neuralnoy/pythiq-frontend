@@ -16,8 +16,6 @@ const KnowledgeBaseDetails = () => {
   const { token } = useAuth();
   const [shouldRefreshDocs, setShouldRefreshDocs] = useState(0);
 
-  console.log('Token in KnowledgeBaseDetails:', token);
-
   useEffect(() => {
     const loadKnowledgeBase = async () => {
       try {

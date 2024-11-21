@@ -1,4 +1,3 @@
-// components/Navbar.jsx
 import { useAuth } from '../context/AuthContext';
 import NavBrand from './nav/NavBrand';
 import NavLinks from './nav/NavLinks';

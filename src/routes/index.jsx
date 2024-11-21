@@ -3,7 +3,7 @@ import LandingPage from '../pages/LandingPage';
 import ProfileSettings from '../pages/ProfileSettings';
 import KnowledgeBase from '../pages/KnowledgeBase';
 import Chat from '../pages/Chat';
-import Search from '../pages/Search';
+import Usage from '../pages/Usage';
 import KnowledgeBaseDetails from '../pages/KnowledgeBaseDetails';
 
 export const routes = [
@@ -28,8 +28,8 @@ export const routes = [
     protected: true
   },
   {
-    path: '/search',
-    element: <Search />,
+    path: '/usage',
+    element: <Usage />,
     protected: true
   },
   {

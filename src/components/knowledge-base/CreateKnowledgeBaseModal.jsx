@@ -22,7 +22,7 @@ const CreateKnowledgeBaseModal = ({ isOpen, onClose, onCreate }) => {
   return (
     <div className="modal modal-open">
       <div className="modal-box">
-        <h3 className="font-bold text-lg mb-4">Create New Knowledge Base</h3>
+        <h3 className="font-bold text-lg mb-4">Create New Bookshelf</h3>
         <form onSubmit={handleSubmit}>
           <div className="form-control">
             {error && (
