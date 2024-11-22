@@ -1,5 +1,5 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
@@ -7,13 +7,31 @@ const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/auth/me', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (email, password, rememberMe = false) => {
     setLoading(true);
@@ -45,10 +63,6 @@ export const AuthProvider = ({ children }) => {
       };
       
       setUser(userData);
-      if (rememberMe) {
-        localStorage.setItem('user', JSON.stringify(userData));
-      }
-      
       navigate('/knowledge', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
@@ -94,11 +108,14 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('user');
       setUser(null);
       navigate('/', { replace: true });
     }
   };
+
+  if (loading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <AuthContext.Provider value={{ 
