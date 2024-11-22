@@ -8,13 +8,15 @@ import {
   PencilIcon,
   ClockIcon,
   CheckCircleIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline';
 import { documentService } from '../../services/documentService';
 import FileIcon from '../common/FileIcon';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { formatFileSize } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
+import PlayCircleIcon from '@heroicons/react/24/solid/PlayCircleIcon';
 
 const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documents, setDocuments] = useState([]);
@@ -23,6 +25,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documentToRename, setDocumentToRename] = useState(null);
   const [newName, setNewName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
 
   const MAX_FILENAME_LENGTH = 30;
   const MAX_INPUT_LENGTH = 50;
@@ -88,9 +91,11 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     try {
       await documentService.deleteDocument(knowledgeBaseId, documentToDelete.id, token);
       setDocuments(documents.filter(d => d.id !== documentToDelete.id));
+      setDocumentToDelete(null);
+      toast.success('Document deleted successfully');
     } catch (error) {
       console.error('Failed to delete document:', error);
-      alert('Failed to delete document');
+      toast.error('Failed to delete document');
     }
   };
 
@@ -115,24 +120,131 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     }
   };
 
-  const renderParsingStatus = (status) => {
+  const renderParsingStatus = (status, docId) => {
     switch (status) {
       case 'done':
         return (
-          <div className="flex items-center text-success">
-            <CheckCircleIcon className="w-5 h-5 mr-1" />
-            <span>Done</span>
+          <div className="flex items-center">
+            <CheckCircleIcon className="w-5 h-5 text-success" />
           </div>
         );
-      case 'pending':
+      case 'processing':
+        return (
+          <div className="flex items-center">
+            <span className="loading loading-spinner loading-sm text-info"></span>
+          </div>
+        );
       default:
         return (
-          <div className="flex items-center text-warning">
-            <ClockIcon className="w-5 h-5 mr-1" />
-            <span>Pending</span>
-          </div>
+          <button
+            className="text-success hover:text-success/80 transition-colors"
+            onClick={() => handleParseDocument(docId)}
+          >
+            <PlayCircleIcon className="h-5 w-5" />
+          </button>
         );
     }
+  };
+
+  const handleBulkEnable = async () => {
+    try {
+      await Promise.all(
+        selectedDocuments.map(docId =>
+          documentService.toggleDocumentEnabled(knowledgeBaseId, docId, token, true)
+        )
+      );
+      await loadDocuments();
+      setSelectedDocuments([]);
+      toast.success('Documents enabled successfully');
+    } catch (error) {
+      toast.error('Failed to enable documents');
+    }
+  };
+
+  const handleBulkDisable = async () => {
+    try {
+      await Promise.all(
+        selectedDocuments.map(docId =>
+          documentService.toggleDocumentEnabled(knowledgeBaseId, docId, token, false)
+        )
+      );
+      await loadDocuments();
+      setSelectedDocuments([]);
+      toast.success('Documents disabled successfully');
+    } catch (error) {
+      toast.error('Failed to disable documents');
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setDocumentToDelete(selectedDocuments);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    try {
+      await Promise.all(
+        documentToDelete.map(docId =>
+          documentService.deleteDocument(knowledgeBaseId, docId, token)
+        )
+      );
+      setDocuments(documents.filter(d => !documentToDelete.includes(d.id)));
+      setSelectedDocuments([]);
+      toast.success('Documents deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete documents');
+    }
+    setDocumentToDelete(null);
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedDocuments(filteredDocuments.map(doc => doc.id));
+    } else {
+      setSelectedDocuments([]);
+    }
+  };
+
+  const handleSelectDocument = (docId) => {
+    setSelectedDocuments(prev => {
+      if (prev.includes(docId)) {
+        return prev.filter(id => id !== docId);
+      }
+      return [...prev, docId];
+    });
+  };
+
+  const renderBulkActionsToolbar = () => {
+    if (selectedDocuments.length === 0) return null;
+
+    return (
+      <div className="flex items-center gap-2 mb-4 p-2 bg-base-200 rounded-lg">
+        <span className="text-sm font-medium">
+          {selectedDocuments.length} selected
+        </span>
+        <div className="flex-1" />
+        <button
+          onClick={handleBulkEnable}
+          className="btn btn-sm btn-ghost"
+          title="Enable selected"
+        >
+          <CheckCircleIcon className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleBulkDisable}
+          className="btn btn-sm btn-ghost"
+          title="Disable selected"
+        >
+          <XCircleIcon className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleBulkDelete}
+          className="btn btn-sm btn-ghost text-error"
+          title="Delete selected"
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -153,6 +265,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
 
   return (
     <div className="space-y-4">
+      {renderBulkActionsToolbar()}
       <div className="flex items-center space-x-2">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -174,12 +287,21 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
             <table className="table w-full">
               <thead className="sticky top-0 bg-base-100 z-10">
                 <tr>
-                  <th className="bg-base-100">Name</th>
-                  <th className="bg-base-100">Size</th>
-                  <th className="bg-base-100">Enabled</th>
-                  <th className="bg-base-100">Parsing Status</th>
-                  <th className="bg-base-100">Uploaded</th>
-                  <th className="bg-base-100">Actions</th>
+                  <th className="w-4 p-2">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-sm"
+                      checked={selectedDocuments.length === filteredDocuments.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="p-2">Name</th>
+                  <th className="w-20 p-2">Size</th>
+                  <th className="w-28 p-2">Enabled</th>
+                  <th className="w-16 p-2">Status</th>
+                  <th className="w-16 p-2">Pages</th>
+                  <th className="w-28 p-2">Uploaded</th>
+                  <th className="w-28 p-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -200,55 +322,66 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                 ) : (
                   filteredDocuments.map((doc) => (
                     <tr key={doc.id} className="hover">
-                      <td>
-                        <div className="flex items-center space-x-3">
+                      <td className="p-2">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm"
+                          checked={selectedDocuments.includes(doc.id)}
+                          onChange={() => handleSelectDocument(doc.id)}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
                           <FileIcon filename={doc.name} className="w-5 h-5 flex-shrink-0" />
                           <span className="truncate max-w-xs font-medium">{doc.name}</span>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap">
+                      <td className="p-2 w-20">
                         {formatFileSize(doc.size)}
                       </td>
-                      <td>
-                        <div className="flex items-center space-x-2">
-                          <label className="cursor-pointer label">
-                            <input
-                              type="checkbox"
-                              className="toggle toggle-primary toggle-sm"
-                              checked={doc.enabled}
-                              onChange={() => handleToggleEnable(doc.id)}
-                            />
-                            <span className="label-text ml-2">
-                              {doc.enabled ? 'Yes' : 'No'}
-                            </span>
-                          </label>
+                      <td className="p-2 w-28">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            className="toggle toggle-primary toggle-sm"
+                            checked={doc.enabled}
+                            onChange={() => handleToggleEnable(doc.id)}
+                          />
+                          <span className="ml-2">{doc.enabled ? 'Yes' : 'No'}</span>
                         </div>
                       </td>
-                      <td>
-                        {renderParsingStatus(doc.parsing_status)}
+                      <td className="p-2 w-16">
+                        <div className="flex justify-center">
+                          {renderParsingStatus(doc.parsing_status, doc.id)}
+                        </div>
                       </td>
-                      <td className="whitespace-nowrap">
+                      <td className="p-2 w-16">
+                        <div className="flex justify-center">
+                          {doc.parsed_pages || 0}
+                        </div>
+                      </td>
+                      <td className="p-2 w-28">
                         {format(parseISO(doc.uploaded_at), 'MMM d, yyyy')}
                       </td>
-                      <td className="whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleRenameClick(doc)}
-                            className="btn btn-sm btn-ghost"
+                      <td className="p-1 w-24">
+                        <div className="flex items-center justify-center gap-1">
+                          <button 
+                            onClick={() => handleRenameClick(doc)} 
+                            className="btn btn-sm btn-ghost" 
                             title="Rename"
                           >
                             <PencilIcon className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDownload(doc)}
-                            className="btn btn-sm btn-ghost"
+                          <button 
+                            onClick={() => handleDownload(doc)} 
+                            className="btn btn-sm btn-ghost" 
                             title="Download"
                           >
                             <ArrowDownTrayIcon className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteClick(doc)}
-                            className="btn btn-sm btn-ghost text-error"
+                          <button 
+                            onClick={() => handleDeleteClick(doc)} 
+                            className="btn btn-sm btn-ghost text-error" 
                             title="Delete"
                           >
                             <TrashIcon className="w-4 h-4" />
@@ -267,9 +400,12 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
       <ConfirmationModal
         isOpen={!!documentToDelete}
         onClose={() => setDocumentToDelete(null)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Document"
-        message={`Are you sure you want to delete "${documentToDelete?.name}"? This action cannot be undone.`}
+        onConfirm={Array.isArray(documentToDelete) ? handleBulkDeleteConfirm : handleDeleteConfirm}
+        title="Delete Documents"
+        message={Array.isArray(documentToDelete) 
+          ? `Are you sure you want to delete ${documentToDelete.length} documents? This action cannot be undone.`
+          : `Are you sure you want to delete "${documents.find(d => d.id === documentToDelete)?.name}"? This action cannot be undone.`
+        }
       />
 
       <div className={`modal ${documentToRename ? 'modal-open' : ''}`}>

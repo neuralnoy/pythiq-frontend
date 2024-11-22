@@ -11,6 +11,12 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(knowledgeBase.title);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  const formattedDate = formatInTimeZone(
+    parseISO(knowledgeBase.created_at),
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    'MMM d, yyyy • h:mm a'
+  );
 
   const truncateText = (text, maxLength = 30) => {
     if (text.length <= maxLength) return text;
@@ -79,11 +85,7 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
           </div>
           <p className="text-sm text-gray-500 flex items-center gap-1">
             <CalendarIcon className="w-4 h-4" />
-            Created: {formatInTimeZone(
-              parseISO(knowledgeBase.created_at),
-              Intl.DateTimeFormat().resolvedOptions().timeZone,
-              'MMM d, yyyy • h:mm a'
-            )}
+            Created: {formattedDate}
           </p>
           <div className="card-actions justify-end mt-4">
             <button

@@ -103,12 +103,16 @@ export const documentService = {
     document.body.removeChild(a);
   },
 
-  async toggleDocumentEnabled(knowledgeBaseId, documentId) {
+  async toggleDocumentEnabled(knowledgeBaseId, documentId, token, enabled) {
     const response = await fetch(
       `${API_URL}/documents/${knowledgeBaseId}/${documentId}/toggle`,
       {
         method: 'PATCH',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ enabled })
       }
     );
 
