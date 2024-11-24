@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { knowledgeBaseService } from '../services/knowledgeBaseService';
+import { toast } from 'react-hot-toast';
 
 export const useKnowledgeBase = () => {
   const { token } = useAuth();
@@ -36,14 +37,20 @@ export const useKnowledgeBase = () => {
 
   const deleteKnowledgeBase = async (id) => {
     try {
+      setIsLoading(true);
       await knowledgeBaseService.deleteKnowledgeBase(id, token);
       setKnowledgeBases(knowledgeBases.filter(kb => kb.id !== id));
+      toast.success('Bookshelf and all its contents deleted successfully');
       return { success: true };
     } catch (err) {
+      console.error('Delete error:', err);
+      toast.error('Failed to delete knowledge base');
       return { 
         success: false, 
-        error: 'Failed to delete knowledge base'
+        error: 'Failed to delete knowledge base and its contents'
       };
+    } finally {
+      setIsLoading(false);
     }
   };
 

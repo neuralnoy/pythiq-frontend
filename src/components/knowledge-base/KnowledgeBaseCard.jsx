@@ -11,6 +11,7 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(knowledgeBase.title);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const formattedDate = formatInTimeZone(
     parseISO(knowledgeBase.created_at),
@@ -30,6 +31,18 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
       setIsRenaming(false);
     }
   };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(knowledgeBase.id);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const deleteMessage = `Are you sure you want to delete "${knowledgeBase.title}"? This will permanently delete all documents within this bookshelf. This action cannot be undone.`;
 
   return (
     <>
@@ -107,9 +120,12 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
       <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => onDelete(knowledgeBase.id)}
+        onConfirm={handleDeleteConfirm}
         title="Delete Knowledge Base"
-        message={`Are you sure you want to delete "${knowledgeBase.title}"? This action cannot be undone.`}
+        message={deleteMessage}
+        isLoading={isDeleting}
+        confirmText="Delete Everything"
+        confirmButtonClass="btn-error"
       />
     </>
   );
