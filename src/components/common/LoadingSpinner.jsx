@@ -1,6 +1,6 @@
-const LoadingSpinner = () => (
-  <div className="flex justify-center items-center min-h-screen">
-    <span className="loading loading-spinner loading-lg text-primary"></span>
+const LoadingSpinner = ({ size = "lg", className = "" }) => (
+  <div className={`flex justify-center items-center ${className}`}>
+    <span className={`loading loading-spinner loading-${size} text-primary`}></span>
   </div>
 );
 

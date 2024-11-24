@@ -16,99 +16,29 @@ export const FILE_TYPE_GROUPS = {
     icon: DocumentMagnifyingGlassIcon,
     color: 'text-red-500'
   },
-  
-  // Text and Documents
-  'txt': {
-    icon: DocumentTextIcon,
-    color: 'text-gray-500'
-  },
-  'rtf': {
-    icon: DocumentTextIcon,
-    color: 'text-gray-500'
-  },
-  'doc': {
-    icon: DocumentTextIcon,
-    color: 'text-blue-500'
-  },
   'docx': {
     icon: DocumentTextIcon,
     color: 'text-blue-500'
-  },
-  'docm': {
-    icon: DocumentTextIcon,
-    color: 'text-blue-500'
-  },
-  
-  // Presentations
-  'ppt': {
-    icon: PresentationChartBarIcon,
-    color: 'text-orange-500'
   },
   'pptx': {
     icon: PresentationChartBarIcon,
     color: 'text-orange-500'
   },
-  'pptm': {
-    icon: PresentationChartBarIcon,
-    color: 'text-orange-500'
-  },
-  
-  // Spreadsheets
   'xlsx': {
     icon: TableCellsIcon,
     color: 'text-green-500'
-  },
-  'xls': {
-    icon: TableCellsIcon,
-    color: 'text-green-500'
-  },
-  'csv': {
-    icon: DocumentChartBarIcon,
-    color: 'text-green-500'
-  },
-  'tsv': {
-    icon: DocumentChartBarIcon,
-    color: 'text-green-500'
-  },
-  
-  // Images
-  'jpg': {
-    icon: PhotoIcon,
-    color: 'text-purple-500'
-  },
-  'jpeg': {
-    icon: PhotoIcon,
-    color: 'text-purple-500'
   },
   'png': {
     icon: PhotoIcon,
     color: 'text-purple-500'
   },
-  'gif': {
-    icon: PhotoIcon,
-    color: 'text-purple-500'
-  },
-  'bmp': {
-    icon: PhotoIcon,
-    color: 'text-purple-500'
-  },
-  'svg': {
-    icon: PhotoIcon,
-    color: 'text-purple-500'
-  },
-  
-  // Web
   'html': {
     icon: GlobeAltIcon,
     color: 'text-blue-400'
   },
-  'htm': {
-    icon: GlobeAltIcon,
-    color: 'text-blue-400'
-  },
-  'xml': {
-    icon: CodeBracketIcon,
-    color: 'text-yellow-500'
+  'md': {
+    icon: DocumentTextIcon,
+    color: 'text-gray-500'
   }
 };
 

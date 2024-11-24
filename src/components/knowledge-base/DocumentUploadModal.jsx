@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { documentService } from '../../services/documentService';
 import { getAcceptedFileTypes, formatFileTypes } from '../../utils/fileTypes';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId, token }) => {
   const [files, setFiles] = useState([]);

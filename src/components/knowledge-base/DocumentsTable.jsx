@@ -9,7 +9,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   MagnifyingGlassIcon,
-  XCircleIcon
+  XCircleIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 import { documentService } from '../../services/documentService';
 import FileIcon from '../common/FileIcon';
@@ -17,6 +18,7 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import { formatFileSize } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
 import PlayCircleIcon from '@heroicons/react/24/solid/PlayCircleIcon';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documents, setDocuments] = useState([]);
@@ -49,7 +51,13 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
 
   useEffect(() => {
     loadDocuments();
-  }, [loadDocuments, shouldRefresh]);
+    
+    // Cleanup any polling intervals when component unmounts
+    return () => {
+      const intervals = window.intervals || [];
+      intervals.forEach(interval => clearInterval(interval));
+    };
+  }, [knowledgeBaseId, shouldRefresh]);
 
   const handleRenameClick = (doc) => {
     setDocumentToRename(doc);
@@ -131,9 +139,19 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
       case 'processing':
         return (
           <div className="flex items-center">
-            <span className="loading loading-spinner loading-sm text-info"></span>
+            <LoadingSpinner size="sm" className="text-info" />
           </div>
         );
+      case 'failed':
+        return (
+          <button
+            className="text-error hover:text-error/80 transition-colors"
+            onClick={() => handleParseDocument(docId)}
+          >
+            <ExclamationCircleIcon className="h-5 w-5" />
+          </button>
+        );
+      case 'pending':
       default:
         return (
           <button
@@ -247,8 +265,73 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     );
   };
 
+  const handleParseDocument = async (docId) => {
+    let pollInterval;
+    
+    try {
+      const doc = documents.find(d => d.id === docId);
+      if (!doc) return;
+
+      // Update UI to show processing state
+      setDocuments(documents.map(d => 
+        d.id === docId ? { ...d, parsing_status: 'processing' } : d
+      ));
+
+      // Call API to parse document
+      await documentService.parseDocument(knowledgeBaseId, docId);
+      
+      // Start polling for status updates
+      pollInterval = setInterval(async () => {
+        try {
+          const updatedDoc = await documentService.getDocument(knowledgeBaseId, docId);
+          console.log('Polling status:', updatedDoc.parsing_status); // Debug log
+          
+          if (updatedDoc) {
+            setDocuments(prevDocs => prevDocs.map(d => 
+              d.id === docId ? { ...d, parsing_status: updatedDoc.parsing_status } : d
+            ));
+            
+            // Stop polling if we reach a final state
+            if (updatedDoc.parsing_status === 'done' || updatedDoc.parsing_status === 'failed') {
+              console.log('Clearing interval, status:', updatedDoc.parsing_status); // Debug log
+              clearInterval(pollInterval);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling document status:', error);
+          clearInterval(pollInterval);
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Failed to parse document:', error);
+      toast.error('Failed to parse document');
+      
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      
+      // Revert UI state on error
+      setDocuments(prevDocs => prevDocs.map(d => 
+        d.id === docId ? { ...d, parsing_status: 'failed' } : d
+      ));
+    }
+    
+    // Cleanup interval after 2 minutes
+    setTimeout(() => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        console.log('Clearing interval due to timeout'); // Debug log
+      }
+    }, 120000);
+  };
+
   if (isLoading) {
-    return <div className="loading loading-spinner loading-lg"></div>;
+    return (
+      <div className="min-h-[200px] flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (documents.length === 0) {
@@ -299,8 +382,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                   <th className="w-20 p-2">Size</th>
                   <th className="w-28 p-2">Enabled</th>
                   <th className="w-16 p-2">Status</th>
-                  <th className="w-16 p-2">Pages</th>
-                  <th className="w-28 p-2">Uploaded</th>
+                  <th className="w-44 p-2">Uploaded</th>
                   <th className="w-28 p-2">Actions</th>
                 </tr>
               </thead>
@@ -355,13 +437,8 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                           {renderParsingStatus(doc.parsing_status, doc.id)}
                         </div>
                       </td>
-                      <td className="p-2 w-16">
-                        <div className="flex justify-center">
-                          {doc.parsed_pages || 0}
-                        </div>
-                      </td>
-                      <td className="p-2 w-28">
-                        {format(parseISO(doc.uploaded_at), 'MMM d, yyyy')}
+                      <td className="p-2 w-44">
+                        {format(parseISO(doc.uploaded_at), 'MMM d, yyyy • h:mm a')}
                       </td>
                       <td className="p-1 w-24">
                         <div className="flex items-center justify-center gap-1">
