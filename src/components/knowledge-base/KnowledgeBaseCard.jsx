@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, PencilSquareIcon, TrashIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { formatInTimeZone } from 'date-fns-tz';
 import { parseISO } from 'date-fns';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -83,10 +83,16 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
               </>
             )}
           </div>
-          <p className="text-sm text-gray-500 flex items-center gap-1">
-            <CalendarIcon className="w-4 h-4" />
-            Created: {formattedDate}
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-500 flex items-center gap-1">
+              <CalendarIcon className="w-4 h-4" />
+              Created: {formattedDate}
+            </p>
+            <p className="text-sm text-gray-500 flex items-center gap-1">
+              <DocumentIcon className="w-4 h-4" />
+              {knowledgeBase.document_count || 0} documents
+            </p>
+          </div>
           <div className="card-actions justify-end mt-4">
             <button
               onClick={() => navigate(`/knowledge/${knowledgeBase.id}`)}

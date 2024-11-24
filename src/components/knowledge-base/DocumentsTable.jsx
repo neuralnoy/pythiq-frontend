@@ -381,7 +381,9 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                   <th className="p-2">Name</th>
                   <th className="w-20 p-2">Size</th>
                   <th className="w-28 p-2">Enabled</th>
-                  <th className="w-16 p-2">Status</th>
+                  <th className="w-16 p-2">
+                    <div className="text-center">Status</div>
+                  </th>
                   <th className="w-44 p-2">Uploaded</th>
                   <th className="w-28 p-2">Actions</th>
                 </tr>
@@ -481,7 +483,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
         title="Delete Documents"
         message={Array.isArray(documentToDelete) 
           ? `Are you sure you want to delete ${documentToDelete.length} documents? This action cannot be undone.`
-          : `Are you sure you want to delete "${documents.find(d => d.id === documentToDelete)?.name}"? This action cannot be undone.`
+          : `Are you sure you want to delete "${documentToDelete?.name}"? This action cannot be undone.`
         }
       />
 
