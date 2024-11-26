@@ -122,38 +122,4 @@ export const documentService = {
 
     return await response.json();
   },
-
-  async parseDocument(knowledgeBaseId, documentId) {
-    const response = await fetch(`${API_URL}/documents/${knowledgeBaseId}/${documentId}/parse`, {
-        method: 'POST',
-        credentials: 'include'
-    });
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Parsing failed');
-    }
-
-    return await response.json();
-  },
-
-  async getDocument(knowledgeBaseId, documentId) {
-    const response = await fetch(
-      `${API_URL}/documents/${knowledgeBaseId}/${documentId}`,
-      {
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch document status');
-    }
-
-    const data = await response.json();
-    console.log('Document status response:', data); // Debug log
-    return data;
-  }
 }; 

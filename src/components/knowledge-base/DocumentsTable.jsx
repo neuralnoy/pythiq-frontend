@@ -128,42 +128,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     }
   };
 
-  const renderParsingStatus = (status, docId) => {
-    switch (status) {
-      case 'done':
-        return (
-          <div className="flex items-center">
-            <CheckCircleIcon className="w-5 h-5 text-success" />
-          </div>
-        );
-      case 'processing':
-        return (
-          <div className="flex items-center">
-            <LoadingSpinner size="sm" className="text-info" />
-          </div>
-        );
-      case 'failed':
-        return (
-          <button
-            className="text-error hover:text-error/80 transition-colors"
-            onClick={() => handleParseDocument(docId)}
-          >
-            <ExclamationCircleIcon className="h-5 w-5" />
-          </button>
-        );
-      case 'pending':
-      default:
-        return (
-          <button
-            className="text-success hover:text-success/80 transition-colors"
-            onClick={() => handleParseDocument(docId)}
-          >
-            <PlayCircleIcon className="h-5 w-5" />
-          </button>
-        );
-    }
-  };
-
   const handleBulkEnable = async () => {
     try {
       await Promise.all(
@@ -265,67 +229,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
     );
   };
 
-  const handleParseDocument = async (docId) => {
-    let pollInterval;
-    
-    try {
-      const doc = documents.find(d => d.id === docId);
-      if (!doc) return;
-
-      // Update UI to show processing state
-      setDocuments(documents.map(d => 
-        d.id === docId ? { ...d, parsing_status: 'processing' } : d
-      ));
-
-      // Call API to parse document
-      await documentService.parseDocument(knowledgeBaseId, docId);
-      
-      // Start polling for status updates
-      pollInterval = setInterval(async () => {
-        try {
-          const updatedDoc = await documentService.getDocument(knowledgeBaseId, docId);
-          console.log('Polling status:', updatedDoc.parsing_status); // Debug log
-          
-          if (updatedDoc) {
-            setDocuments(prevDocs => prevDocs.map(d => 
-              d.id === docId ? { ...d, parsing_status: updatedDoc.parsing_status } : d
-            ));
-            
-            // Stop polling if we reach a final state
-            if (updatedDoc.parsing_status === 'done' || updatedDoc.parsing_status === 'failed') {
-              console.log('Clearing interval, status:', updatedDoc.parsing_status); // Debug log
-              clearInterval(pollInterval);
-            }
-          }
-        } catch (error) {
-          console.error('Error polling document status:', error);
-          clearInterval(pollInterval);
-        }
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Failed to parse document:', error);
-      toast.error('Failed to parse document');
-      
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-      
-      // Revert UI state on error
-      setDocuments(prevDocs => prevDocs.map(d => 
-        d.id === docId ? { ...d, parsing_status: 'failed' } : d
-      ));
-    }
-    
-    // Cleanup interval after 2 minutes
-    setTimeout(() => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        console.log('Clearing interval due to timeout'); // Debug log
-      }
-    }, 120000);
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-[200px] flex items-center justify-center">
@@ -381,9 +284,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                   <th className="p-2">Name</th>
                   <th className="w-20 p-2">Size</th>
                   <th className="w-28 p-2">Enabled</th>
-                  <th className="w-16 p-2">
-                    <div className="text-center">Status</div>
-                  </th>
                   <th className="w-44 p-2">Uploaded</th>
                   <th className="w-28 p-2">Actions</th>
                 </tr>
@@ -432,11 +332,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                             onChange={() => handleToggleEnable(doc.id)}
                           />
                           <span className="ml-2">{doc.enabled ? 'Yes' : 'No'}</span>
-                        </div>
-                      </td>
-                      <td className="p-2 w-16">
-                        <div className="flex justify-center">
-                          {renderParsingStatus(doc.parsing_status, doc.id)}
                         </div>
                       </td>
                       <td className="p-2 w-44">
