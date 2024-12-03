@@ -59,7 +59,7 @@ const ParsingStatus = ({ document, onStatusChange }) => {
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-4 h-4 stroke-current">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
         </svg>
-        Parsed
+        Ready
       </div>
     );
   }

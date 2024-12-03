@@ -286,7 +286,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                   <th className="p-2">Name</th>
                   <th className="w-20 p-2">Size</th>
                   <th className="w-28 p-2">Enabled</th>
-                  <th className="w-28 p-2">Parse Status</th>
+                  <th className="w-28 p-2">Document Status</th>
                   <th className="w-44 p-2">Uploaded</th>
                   <th className="w-28 p-2">Actions</th>
                 </tr>
