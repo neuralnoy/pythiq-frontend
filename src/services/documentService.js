@@ -122,4 +122,29 @@ export const documentService = {
 
     return await response.json();
   },
+
+  async startParsing(knowledgeBaseId, documentId) {
+    const response = await fetch(`${API_URL}/documents/${knowledgeBaseId}/${documentId}/parse`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to start parsing');
+    }
+
+    return await response.json();
+  },
+
+  async getParsingStatus(knowledgeBaseId, documentId) {
+    const response = await fetch(`${API_URL}/documents/${knowledgeBaseId}/${documentId}/parse-status`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get parsing status');
+    }
+
+    return await response.json();
+  },
 }; 

@@ -19,6 +19,8 @@ import { formatFileSize } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
 import PlayCircleIcon from '@heroicons/react/24/solid/PlayCircleIcon';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { PlayIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
+import ParsingStatus from '../documents/ParsingStatus';
 
 const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documents, setDocuments] = useState([]);
@@ -284,6 +286,7 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                   <th className="p-2">Name</th>
                   <th className="w-20 p-2">Size</th>
                   <th className="w-28 p-2">Enabled</th>
+                  <th className="w-28 p-2">Parse Status</th>
                   <th className="w-44 p-2">Uploaded</th>
                   <th className="w-28 p-2">Actions</th>
                 </tr>
@@ -333,6 +336,16 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                           />
                           <span className="ml-2">{doc.enabled ? 'Yes' : 'No'}</span>
                         </div>
+                      </td>
+                      <td className="p-2 w-28">
+                        <ParsingStatus 
+                          document={doc} 
+                          onStatusChange={(newStatus) => {
+                            setDocuments(docs => 
+                              docs.map(d => d.id === doc.id ? {...d, parsing_status: newStatus} : d)
+                            );
+                          }} 
+                        />
                       </td>
                       <td className="p-2 w-44">
                         {format(parseISO(doc.uploaded_at), 'MMM d, yyyy • h:mm a')}
