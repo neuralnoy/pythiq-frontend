@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 const LandingPage = () => {
   const { user } = useAuth();
+  const [additionalTokens, setAdditionalTokens] = useState(0);
   
   if (user) return <Navigate to="/knowledge" replace />;
 
@@ -14,15 +15,10 @@ const LandingPage = () => {
     document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
   };
   
-  const calculatePrice = (storage, tokens) => {
-    const baseStoragePrice = storage * 0.01; // $0.01 per MB
-    const tokenPrice = (tokens / 1_000_000) * 3; // $3 per million tokens
-    return Math.round((baseStoragePrice + tokenPrice) * 100) / 100 + 5; // Round to 2 decimal places
+  const calculateAdditionalCost = (tokens) => {
+    return (tokens / 1_000_000) * 5; // $5 per million tokens
   };
   
-  const [storage, setStorage] = useState(0);
-  const [tokens, setTokens] = useState(0);
-
   return (
     <div className="drawer drawer-end">
       <input id="auth-drawer" type="checkbox" className="drawer-toggle" />
@@ -123,12 +119,10 @@ const LandingPage = () => {
                   <div className="card-body">
                     <h3 className="card-title text-xl mb-2">Free Trial</h3>
                     <div className="text-3xl font-bold mb-4">$0</div>
-                    <p className="text-base-content/70 mb-4">1 day of access</p>
+                    <p className="text-base-content/70 mb-4">7 days of full access</p>
                     <ul className="space-y-2 mb-8">
-                      <li>✓ Up to 5 documents</li>
-                      <li>✓ Max 50MB storage</li>
-                      <li>✓ Up to 5M tokens</li>
-                      <li>✓ No credit card required</li>
+                      <li>✓ Up to 500K tokens</li>
+                      <li>✓ All features included</li>
                     </ul>
                     <label htmlFor="auth-drawer" className="btn btn-primary w-full">
                       Start Trial
@@ -136,65 +130,47 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                {/* Pay as You Go Card */}
+                {/* Professional Card */}
                 <div className="card bg-primary text-primary-content shadow-xl">
                   <div className="card-body">
-                    <h3 className="card-title text-xl mb-2">Pay as You Go</h3>
-                    <div className="text-3xl font-bold mb-4">
-                      ${calculatePrice(storage, tokens)}
+                    <h3 className="card-title text-xl mb-2">Professional</h3>
+                    <div>
+                      <span className="text-lg line-through opacity-50">$49.95</span>
+                      <div className="text-3xl font-bold mb-4">
+                        ${(20 + calculateAdditionalCost(additionalTokens * 1_000_000)).toFixed(2)}
+                      </div>
                     </div>
                     <p className="text-primary-content/70 mb-4">per month</p>
-                    
-                    <div className="form-control w-full mb-4">
-                      <label className="label">
-                        <span className="label-text text-primary-content">Storage: {storage} MB</span>
-                        <span className="label-text text-primary-content">${(storage * 0.01).toFixed(2)}</span>
-                      </label>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="10000" 
-                        value={storage}
-                        onChange={(e) => setStorage(Number(e.target.value))}
-                        step="50"
-                        className="range range-secondary"
-                      />
-                      <div className="w-full flex justify-between text-xs px-2 text-primary-content/70">
-                        <span>0MB</span>
-                        <span>10GB</span>
-                      </div>
-                    </div>
-
-                    <div className="form-control w-full mb-4">
-                      <label className="label">
-                        <span className="label-text text-primary-content">Tokens: {(tokens / 1_000_000).toFixed(1)}M</span>
-                        <span className="label-text text-primary-content">${(tokens / 1_000_000 * 3).toFixed(2)}</span>
-                      </label>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="50000000" 
-                        value={tokens}
-                        onChange={(e) => setTokens(Number(e.target.value))}
-                        step="1000000"
-                        className="range range-secondary"
-                      />
-                      <div className="w-full flex justify-between text-xs px-2 text-primary-content/70">
-                        <span>0M</span>
-                        <span>50M</span>
-                      </div>
-                      <div className="text-xs text-primary-content/70 mt-1">
-                        1 token ≈ 4 characters in English text
-                      </div>
-                    </div>
-
+                    <p className="text-sm text-primary-content/70 mb-4">1 token ≈ 4 characters in English text</p>
                     <ul className="space-y-2 mb-8">
-                      <li>✓ Monthly fixed cost of $5</li>
-                      <li>✓ $0.01 per MB</li>
-                      <li>✓ $3 per 1M tokens</li>
-                      <li>✓ Same price for input/output tokens</li>
+                      <li>✓ 5M tokens included</li>
                       <li>✓ Unlimited documents</li>
+                      <li>✓ $5 per additional 1M tokens</li>
+                      <li>✓ Priority support</li>
+                      <li>✓ Advanced analytics</li>
                     </ul>
+                    
+                    <div className="mb-6">
+                      <label className="label">
+                        <span className="label-text text-primary-content">Additional Tokens</span>
+                        <span className="label-text text-primary-content">
+                          +{additionalTokens.toLocaleString()}M tokens
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="96"  // Up to 100M total (96M additional + 7M included)
+                        value={additionalTokens}
+                        onChange={(e) => setAdditionalTokens(parseInt(e.target.value))}
+                        className="range range-secondary"
+                        step="1"
+                      />
+                      <div className="text-sm text-primary-content/70 mt-2">
+                        +${calculateAdditionalCost(additionalTokens * 1_000_000).toFixed(2)}/month
+                      </div>
+                    </div>
+
                     <label htmlFor="auth-drawer" className="btn btn-secondary w-full">
                       Get Started
                     </label>
@@ -208,12 +184,13 @@ const LandingPage = () => {
                     <div className="text-3xl font-bold mb-4">Custom</div>
                     <p className="text-base-content/70 mb-4">Tailored to your needs</p>
                     <ul className="space-y-2 mb-8">
-                      <li>✓ Custom storage limits</li>
-                      <li>✓ Custom token allocation</li>
-                      <li>✓ Volume discounts</li>
-                      <li>✓ Dedicated support</li>
-                      <li>✓ SLA guarantees</li>
-                      <li>✓ Team management</li>
+                      <li>✓ Enterprise-grade system integration</li>
+                      <li>✓ Advanced document parsing API access</li>
+                      <li>✓ Choice of LLM provider</li>
+                      <li>✓ Team collaboration features</li>
+                      <li>✓ Role-based access control</li>
+                      <li>✓ 24/7 dedicated support</li>
+                      <li>✓ Custom SLA guarantees</li>
                     </ul>
                     <a 
                       href="mailto:sales@pythiq.ai" 

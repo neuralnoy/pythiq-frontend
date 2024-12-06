@@ -121,7 +121,7 @@ const KnowledgeBaseCard = ({ knowledgeBase, onDelete, onRename }) => {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Knowledge Base"
+        title="Delete Bookshelf"
         message={deleteMessage}
         isLoading={isDeleting}
         confirmText="Delete Everything"
