@@ -247,6 +247,47 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
         <p className="mt-1 text-sm text-gray-500">
           Upload documents to get started
         </p>
+
+        <div className="mt-12 w-full max-w-5xl mx-auto">
+          <h4 className="text-lg font-semibold text-center mb-8">How to manage your documents:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/10 rounded-full p-3">
+                    <span className="text-xl font-bold text-primary">1</span>
+                  </div>
+                  <h3 className="card-title text-lg">Upload Documents</h3>
+                </div>
+                <p className="text-gray-600">Upload documents that are relevant to this bookshelf's topic for better organization</p>
+              </div>
+            </div>
+
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/10 rounded-full p-3">
+                    <span className="text-xl font-bold text-primary">2</span>
+                  </div>
+                  <h3 className="card-title text-lg">Processing</h3>
+                </div>
+                <p className="text-gray-600">Documents will be processed automatically. For documents with images, our LLM Vision model will be used, consuming tokens. Monitor usage in your dashboard and wait for the "Ready" status.</p>
+              </div>
+            </div>
+
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/10 rounded-full p-3">
+                    <span className="text-xl font-bold text-primary">3</span>
+                  </div>
+                  <h3 className="card-title text-lg">Enable/Disable</h3>
+                </div>
+                <p className="text-gray-600">Choose which documents to include in your chat sessions by toggling them on or off in the document list</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

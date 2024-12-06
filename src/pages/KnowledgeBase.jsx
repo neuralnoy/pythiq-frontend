@@ -85,7 +85,50 @@ const KnowledgeBase = () => {
             {searchQuery ? "No matching bookshelf found" : "No bookshelf found"}
           </p>
           {!searchQuery && (
-            <p className="text-gray-400">Click the button above to create your first bookshelf</p>
+            <>
+              <p className="text-gray-400">Click the button above to create your first bookshelf</p>
+              
+              <div className="mt-12 w-full max-w-5xl">
+                <h4 className="text-lg font-semibold text-center mb-8">How to get started:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-primary/10 rounded-full p-3">
+                          <span className="text-xl font-bold text-primary">1</span>
+                        </div>
+                        <h3 className="card-title text-lg">Create a Bookshelf</h3>
+                      </div>
+                      <p className="text-gray-600">Create a new bookshelf to organize your thematic documents in one place</p>
+                    </div>
+                  </div>
+
+                  <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-primary/10 rounded-full p-3">
+                          <span className="text-xl font-bold text-primary">2</span>
+                        </div>
+                        <h3 className="card-title text-lg">Open Bookshelf</h3>
+                      </div>
+                      <p className="text-gray-600">Click "View Details" to access your newly created bookshelf</p>
+                    </div>
+                  </div>
+
+                  <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-primary/10 rounded-full p-3">
+                          <span className="text-xl font-bold text-primary">3</span>
+                        </div>
+                        <h3 className="card-title text-lg">Add Documents</h3>
+                      </div>
+                      <p className="text-gray-600">Upload your documents to the bookshelf to start organizing your content</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       ) : (
