@@ -39,7 +39,7 @@ const ParsingStatus = ({ document, onStatusChange }) => {
 
   useEffect(() => {
     if (status === 'processing') {
-      const interval = setInterval(checkStatus, 5000);
+      const interval = setInterval(checkStatus, 2000);
       return () => clearInterval(interval);
     }
   }, [status]);

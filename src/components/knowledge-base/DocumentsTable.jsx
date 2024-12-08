@@ -132,9 +132,19 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
 
   const handleBulkEnable = async () => {
     try {
+      // Only enable documents that are currently disabled
+      const documentsToEnable = documents
+        .filter(doc => selectedDocuments.includes(doc.id) && !doc.enabled)
+        .map(doc => doc.id);
+
+      if (documentsToEnable.length === 0) {
+        toast.info('All selected documents are already enabled');
+        return;
+      }
+
       await Promise.all(
-        selectedDocuments.map(docId =>
-          documentService.toggleDocumentEnabled(knowledgeBaseId, docId, token, true)
+        documentsToEnable.map(docId =>
+          documentService.toggleDocumentEnabled(knowledgeBaseId, docId)
         )
       );
       await loadDocuments();
@@ -147,9 +157,19 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
 
   const handleBulkDisable = async () => {
     try {
+      // Only disable documents that are currently enabled
+      const documentsToDisable = documents
+        .filter(doc => selectedDocuments.includes(doc.id) && doc.enabled)
+        .map(doc => doc.id);
+
+      if (documentsToDisable.length === 0) {
+        toast.info('All selected documents are already disabled');
+        return;
+      }
+
       await Promise.all(
-        selectedDocuments.map(docId =>
-          documentService.toggleDocumentEnabled(knowledgeBaseId, docId, token, false)
+        documentsToDisable.map(docId =>
+          documentService.toggleDocumentEnabled(knowledgeBaseId, docId)
         )
       );
       await loadDocuments();

@@ -103,7 +103,7 @@ export const documentService = {
     document.body.removeChild(a);
   },
 
-  async toggleDocumentEnabled(knowledgeBaseId, documentId, token, enabled) {
+  async toggleDocumentEnabled(knowledgeBaseId, documentId) {
     const response = await fetch(
       `${API_URL}/documents/${knowledgeBaseId}/${documentId}/toggle`,
       {
@@ -111,8 +111,7 @@ export const documentService = {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ enabled })
+        }
       }
     );
 
