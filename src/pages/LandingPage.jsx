@@ -49,22 +49,22 @@ const LandingPage = () => {
         <div className="min-h-screen">
           {/* Navigation Bar */}
           <div className="fixed top-0 left-0 right-0 bg-base-100/95 backdrop-blur-sm z-50">
-            <div className="flex justify-between items-center p-4 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center p-2 sm:p-4 max-w-7xl mx-auto">
               <NavBrand />
-              <div className="flex gap-4 items-center">
+              <div className="flex gap-2 sm:gap-4 items-center">
                 <button 
                   onClick={() => scrollToSection('features')} 
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-ghost btn-sm hidden sm:inline-flex"
                 >
                   Features
                 </button>
                 <button 
                   onClick={() => scrollToSection('pricing')} 
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-ghost btn-sm hidden sm:inline-flex"
                 >
                   Pricing
                 </button>
-                <label htmlFor="auth-drawer" className="btn btn-primary btn-sm">
+                <label htmlFor="auth-drawer" className="btn btn-primary btn-sm text-xs sm:text-sm">
                   Get Started
                 </label>
               </div>

@@ -8,22 +8,27 @@ export const SUPPORTED_FILE_TYPES = {
   'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   
   // Images
-  'png': 'image/png',
-  
-  // Web and text
-  'html': 'text/html',
-  'md': 'text/markdown'
+  'png': 'image/png'
 };
 
 export const SUPPORTED_EXTENSIONS = Object.keys(SUPPORTED_FILE_TYPES);
 
 export const getAcceptedFileTypes = () => {
-  return SUPPORTED_EXTENSIONS.map(ext => `.${ext}`).join(',');
+  return [
+    '.pdf',
+    '.docx',
+    '.pptx', 
+    '.xlsx',
+    '.png'
+  ].join(',');
 };
 
 export const formatFileTypes = () => {
-  return SUPPORTED_EXTENSIONS
-    .sort()
-    .map(ext => ext.toUpperCase())
-    .join(', ');
+  return [
+    'PDF',
+    'Word',
+    'PowerPoint',
+    'Excel', 
+    'PNG'
+  ].join('\n');
 }; 
