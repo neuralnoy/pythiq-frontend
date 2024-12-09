@@ -26,7 +26,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [documentToDelete, setDocumentToDelete] = useState(null);
-  const [documentToRename, setDocumentToRename] = useState(null);
   const [newName, setNewName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocuments, setSelectedDocuments] = useState([]);
@@ -60,38 +59,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
       intervals.forEach(interval => clearInterval(interval));
     };
   }, [knowledgeBaseId, shouldRefresh]);
-
-  const handleRenameClick = (doc) => {
-    setDocumentToRename(doc);
-    setNewName(doc.name);
-  };
-
-  const handleRenameConfirm = async () => {
-    if (!newName.trim() || newName === documentToRename.name) {
-      setDocumentToRename(null);
-      return;
-    }
-
-    try {
-      const updatedDoc = await documentService.renameDocument(
-        knowledgeBaseId,
-        documentToRename.id,
-        newName,
-        token
-      );
-      
-      setDocuments(documents.map(d => 
-        d.id === documentToRename.id ? updatedDoc : d
-      ));
-      
-      toast.success('Document renamed successfully');
-    } catch (error) {
-      console.error('Failed to rename document:', error);
-      toast.error(error.message || 'Failed to rename document');
-    } finally {
-      setDocumentToRename(null);
-    }
-  };
 
   const handleDeleteClick = (doc) => {
     setDocumentToDelete(doc);
@@ -414,13 +381,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
                       <td className="p-1 w-24">
                         <div className="flex items-center justify-center gap-1">
                           <button 
-                            onClick={() => handleRenameClick(doc)} 
-                            className="btn btn-sm btn-ghost" 
-                            title="Rename"
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
-                          <button 
                             onClick={() => handleDownload(doc)} 
                             className="btn btn-sm btn-ghost" 
                             title="Download"
@@ -455,46 +415,6 @@ const DocumentsTable = ({ knowledgeBaseId, token, shouldRefresh }) => {
           : `Are you sure you want to delete "${documentToDelete?.name}"? This action cannot be undone.`
         }
       />
-
-      <div className={`modal ${documentToRename ? 'modal-open' : ''}`}>
-        <div className="modal-box">
-          <h3 className="font-bold text-lg mb-4">Rename Document</h3>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            handleRenameConfirm();
-          }}>
-            <div className="form-control">
-              <input
-                type="text"
-                className="input input-bordered"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Enter new name"
-                autoFocus
-              />
-            </div>
-            <div className="modal-action">
-              <button 
-                type="button"
-                className="btn" 
-                onClick={() => setDocumentToRename(null)}
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit"
-                className="btn btn-primary"
-                disabled={!newName.trim() || newName === documentToRename?.name}
-              >
-                Rename
-              </button>
-            </div>
-          </form>
-        </div>
-        <div className="modal-backdrop" onClick={() => setDocumentToRename(null)}>
-          <button className="cursor-default">Close</button>
-        </div>
-      </div>
     </div>
   );
 };

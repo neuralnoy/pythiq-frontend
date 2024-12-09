@@ -8,10 +8,28 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [error, setError] = useState('');
+
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    const oversizedFiles = selectedFiles.filter(file => file.size > MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      setError(`File size too large: ${oversizedFiles.map(f => f.name).join(', ')}. Maximum size is 20MB.`);
+      e.target.value = ''; // Reset file input
+      return;
+    }
+    
+    setError('');
+    setFiles(selectedFiles);
+  };
 
   const handleUpload = async (e) => {
     e.preventDefault();
     setUploading(true);
+    setError('');
     
     try {
       const uploadPromises = files.map(async (file) => {
@@ -37,7 +55,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
       const failures = results.filter(r => !r.success);
       
       if (failures.length > 0) {
-        console.error('Some files failed to upload:', failures);
+        setError(`Failed to upload: ${failures.map(f => f.file).join(', ')}`);
       }
       
       if (results.some(r => r.success)) {
@@ -47,6 +65,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
       setFiles([]);
     } catch (error) {
       console.error('Upload failed:', error);
+      setError('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
       setUploadProgress({});
@@ -65,7 +84,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
               type="file"
               className="file-input file-input-bordered w-full"
               accept={getAcceptedFileTypes()}
-              onChange={(e) => setFiles(Array.from(e.target.files))}
+              onChange={handleFileChange}
               multiple
               required
             />
@@ -74,8 +93,16 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
               <p className="font-mono text-xs leading-relaxed">
                 {formatFileTypes()}
               </p>
+              <p className="text-xs mt-1">Maximum file size: 20MB</p>
             </div>
           </div>
+
+          {error && (
+            <div className="alert alert-error mt-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span>{error}</span>
+            </div>
+          )}
 
           {files.length > 0 && (
             <div className="mt-4 space-y-2">
@@ -101,9 +128,10 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess, knowledgeBaseId
             </button>
             <button 
               type="submit" 
-              className={`btn btn-primary ${uploading ? 'loading' : ''}`}
+              className="btn btn-primary"
               disabled={uploading || files.length === 0}
             >
+              {uploading ? <LoadingSpinner size="sm" /> : null}
               Upload {files.length > 0 ? `(${files.length} files)` : ''}
             </button>
           </div>

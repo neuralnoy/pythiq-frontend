@@ -51,27 +51,6 @@ export const documentService = {
     }
   },
 
-  async renameDocument(knowledgeBaseId, documentId, newName) {
-    const response = await fetch(
-      `${API_URL}/documents/${knowledgeBaseId}/${documentId}/rename`,
-      {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: newName })
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to rename document');
-    }
-
-    return await response.json();
-  },
-
   async getDownloadUrl(knowledgeBaseId, documentId) {
     const response = await fetch(
       `${API_URL}/documents/${knowledgeBaseId}/${documentId}/download`,

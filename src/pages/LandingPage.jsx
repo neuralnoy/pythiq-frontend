@@ -4,6 +4,28 @@ import AuthContainer from '../components/auth/AuthContainer';
 import NavBrand from '../components/nav/NavBrand';
 import { ChevronDownIcon, DocumentTextIcon, ChatBubbleBottomCenterTextIcon, BoltIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import { TypeAnimation } from 'react-type-animation';
+import styled, { keyframes } from 'styled-components';
+
+const zoomInOut = keyframes`
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+`;
+
+const AnimatedText = styled.div`
+  animation: ${zoomInOut} 1.5s ease forwards;
+  animation-delay: 1.5s;
+  opacity: 0;
+`;
 
 const LandingPage = () => {
   const { user } = useAuth();
@@ -53,9 +75,18 @@ const LandingPage = () => {
           <section className="min-h-screen flex flex-col items-center justify-center pt-16 px-4">
             <div className="text-center max-w-4xl mx-auto">
               <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-8">
-                IT ALL<br />
-                STARTS WITH A<br />
-                <span className="text-5xl md:text-7xl text-primary">CONVERSATION</span>
+                <TypeAnimation
+                  sequence={[
+                    'IT ALL\nSTARTS WITH A',
+                    2000
+                  ]}
+                  wrapper="div"
+                  speed={50}
+                  cursor={false}
+                />
+                <AnimatedText className="text-5xl md:text-7xl text-primary">
+                  CONVERSATION
+                </AnimatedText>
               </h1>
               <p className="text-2xl mb-12 text-base-content/90 font-medium">
                 Transform your documents into intelligent conversations. Upload, organize, and chat with your content using advanced AI.
@@ -189,7 +220,7 @@ const LandingPage = () => {
                       <li>✓ Choice of LLM provider</li>
                       <li>✓ Team collaboration features</li>
                       <li>✓ Role-based access control</li>
-                      <li>✓ 24/7 dedicated support</li>
+                      <li>✓ Dedicated support</li>
                       <li>✓ Custom SLA guarantees</li>
                     </ul>
                     <a 
