@@ -87,9 +87,40 @@ const Chat = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1">
-        <div className="container mx-auto px-4 py-8">
-          {/* Content will go here */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 container mx-auto px-4 py-8">
+          {/* Chat messages will go here */}
+        </div>
+        
+        {/* Chat Input Bar */}
+        <div className="bg-base-100 p-4 mb-16">
+          <div className="container mx-auto max-w-4xl">
+            <form className="relative" onSubmit={(e) => {
+              e.preventDefault();
+              // TODO: Handle message submission
+            }}>
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="input input-bordered w-full pr-12"
+              />
+              <button 
+                type="submit" 
+                className="absolute right-3 top-1/2 translate-y-[-50%] p-2 rounded-full hover:scale-110 active:scale-105 transition-transform duration-200"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="currentColor" 
+                  className="w-5 h-5"
+                >
+                  <path 
+                    d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" 
+                  />
+                </svg>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 

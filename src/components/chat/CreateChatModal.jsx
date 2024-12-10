@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useKnowledgeBase } from '../../hooks/useKnowledgeBase';
+import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
   const [title, setTitle] = useState('');
@@ -8,6 +9,7 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
   const [selectedKbs, setSelectedKbs] = useState([]);
   const { knowledgeBases } = useKnowledgeBase();
   const [error, setError] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -42,6 +44,27 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
     } catch (err) {
       setError(err.message || 'Failed to create chat');
     }
+  };
+
+  const toggleKnowledgeBase = (kbId) => {
+    setSelectedKbs(prev => {
+      if (prev.includes(kbId)) {
+        return prev.filter(id => id !== kbId);
+      }
+      return [...prev, kbId];
+    });
+  };
+
+  const removeKnowledgeBase = (e, kbId) => {
+    e.stopPropagation(); // Prevent dropdown from opening
+    setSelectedKbs(prev => prev.filter(id => id !== kbId));
+  };
+
+  const getSelectedKbTitles = () => {
+    return selectedKbs.map(kbId => {
+      const kb = knowledgeBases.find(kb => kb.id === kbId);
+      return kb ? kb.title : '';
+    });
   };
 
   if (!isOpen) return null;
@@ -80,26 +103,69 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <label className="label">
                 <span className="label-text">Knowledge Bases *</span>
               </label>
-              <select
-                className="select select-bordered w-full"
-                multiple
-                value={selectedKbs}
-                onChange={(e) => setSelectedKbs([...e.target.selectedOptions].map(option => option.value))}
-                required
+              <div 
+                className="dropdown w-full"
+                tabIndex={0}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget)) {
+                    setIsDropdownOpen(false);
+                  }
+                }}
               >
-                {knowledgeBases.map((kb) => (
-                  <option key={kb.id} value={kb.id}>
-                    {kb.title}
-                  </option>
-                ))}
-              </select>
-              <label className="label">
-                <span className="label-text-alt text-gray-500">Hold Ctrl/Cmd to select multiple</span>
-              </label>
+                <div
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="input input-bordered w-full min-h-[2.5rem] flex items-center cursor-pointer relative"
+                >
+                  <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar py-1 px-1 w-full">
+                    {selectedKbs.length === 0 ? (
+                      <span className="text-gray-500">Select knowledge bases</span>
+                    ) : (
+                      <>
+                        {getSelectedKbTitles().map((title, index) => (
+                          <div
+                            key={selectedKbs[index]}
+                            className="bg-primary text-primary-content px-2 py-1 flex items-center gap-1 rounded shrink-0"
+                          >
+                            <span className="truncate max-w-[100px]">{title}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => removeKnowledgeBase(e, selectedKbs[index])}
+                              className="hover:bg-primary-focus rounded p-0.5"
+                            >
+                              <XMarkIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+                {isDropdownOpen && (
+                  <div className="absolute bottom-full left-0 right-0 bg-base-100 w-full p-2 shadow rounded-lg mb-1 max-h-60 overflow-auto">
+                    {knowledgeBases.length === 0 ? (
+                      <div className="text-sm text-gray-500 p-2">No knowledge bases available</div>
+                    ) : (
+                      knowledgeBases.map((kb) => (
+                        <button
+                          key={kb.id}
+                          type="button"
+                          className="flex items-center justify-between w-full p-2 hover:bg-base-200 rounded-lg"
+                          onClick={() => toggleKnowledgeBase(kb.id)}
+                        >
+                          <span>{kb.title}</span>
+                          {selectedKbs.includes(kb.id) && (
+                            <CheckIcon className="w-5 h-5 text-primary" />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
