@@ -5,6 +5,7 @@ import KnowledgeBase from '../pages/KnowledgeBase';
 import Chat from '../pages/Chat';
 import Usage from '../pages/Usage';
 import KnowledgeBaseDetails from '../pages/KnowledgeBaseDetails';
+import Terms from '../pages/Terms';
 
 export const routes = [
   {
@@ -37,4 +38,9 @@ export const routes = [
     element: <KnowledgeBaseDetails />,
     protected: true
   },
+  {
+    path: '/terms',
+    element: <Terms />,
+    protected: false
+  }
 ];

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PlusIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import CreateChatModal from '../components/chat/CreateChatModal';
+import { Link } from 'react-router-dom';
 
 const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -112,7 +113,7 @@ const Chat = () => {
                   xmlns="http://www.w3.org/2000/svg" 
                   viewBox="0 0 24 24" 
                   fill="currentColor" 
-                  className="w-5 h-5"
+                  className="w-5 h-5 text-primary"
                 >
                   <path 
                     d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" 
@@ -120,6 +121,9 @@ const Chat = () => {
                 </svg>
               </button>
             </form>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              PythiQ can make mistakes. <Link to="/terms" className="link link-primary">Check Terms and Policies</Link>.
+            </p>
           </div>
         </div>
       </div>

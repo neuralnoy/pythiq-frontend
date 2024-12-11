@@ -5,7 +5,6 @@ import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [selectedKbs, setSelectedKbs] = useState([]);
   const { knowledgeBases } = useKnowledgeBase();
   const [error, setError] = useState('');
@@ -14,7 +13,6 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
   useEffect(() => {
     if (isOpen) {
       setTitle('');
-      setDescription('');
       setSelectedKbs([]);
       setError('');
     }
@@ -30,14 +28,13 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
     }
 
     if (selectedKbs.length === 0) {
-      setError('Please select at least one knowledge base');
+      setError('Please select at least one bookshelf');
       return;
     }
 
     try {
       await onCreate({
         title: title.trim(),
-        description: description.trim(),
         knowledgeBaseIds: selectedKbs
       });
       onClose();
@@ -89,23 +86,9 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
               />
             </div>
 
-            <div>
-              <label className="label">
-                <span className="label-text">Description</span>
-                <span className="label-text-alt text-gray-500">Optional</span>
-              </label>
-              <textarea
-                className="textarea textarea-bordered w-full"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter chat description"
-                rows={3}
-              />
-            </div>
-
             <div className="relative">
               <label className="label">
-                <span className="label-text">Knowledge Bases *</span>
+                <span className="label-text">Bookshelves *</span>
               </label>
               <div 
                 className="dropdown w-full"
@@ -122,7 +105,7 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
                 >
                   <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar py-1 px-1 w-full">
                     {selectedKbs.length === 0 ? (
-                      <span className="text-gray-500">Select knowledge bases</span>
+                      <span className="text-gray-500">Select bookshelves</span>
                     ) : (
                       <>
                         {getSelectedKbTitles().map((title, index) => (
@@ -147,7 +130,7 @@ const CreateChatModal = ({ isOpen, onClose, onCreate }) => {
                 {isDropdownOpen && (
                   <div className="absolute bottom-full left-0 right-0 bg-base-100 w-full p-2 shadow rounded-lg mb-1 max-h-60 overflow-auto">
                     {knowledgeBases.length === 0 ? (
-                      <div className="text-sm text-gray-500 p-2">No knowledge bases available</div>
+                      <div className="text-sm text-gray-500 p-2">No bookshelves available</div>
                     ) : (
                       knowledgeBases.map((kb) => (
                         <button
