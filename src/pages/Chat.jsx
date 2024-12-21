@@ -1,15 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import CreateChatModal from '../components/chat/CreateChatModal';
 import { Link } from 'react-router-dom';
+import { chatService } from '../services/chatService';
+import { toast } from 'react-hot-toast';
+import DeleteChatModal from '../components/chat/DeleteChatModal';
 
 const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedChat, setSelectedChat] = useState(null);
+
+  useEffect(() => {
+    loadChats();
+  }, []);
+
+  const loadChats = async () => {
+    try {
+      const fetchedChats = await chatService.getChats();
+      setChats(fetchedChats);
+    } catch (error) {
+      console.error('Failed to load chats:', error);
+      toast.error('Failed to load chats');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateChat = async (chatData) => {
-    // TODO: Implement chat creation logic
-    console.log('Creating chat:', chatData);
+    try {
+      const newChat = await chatService.createChat(chatData);
+      setChats(prevChats => [newChat, ...prevChats]);
+      setIsModalOpen(false);
+      toast.success('Chat created successfully');
+    } catch (error) {
+      console.error('Failed to create chat:', error);
+      toast.error(error.message || 'Failed to create chat');
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    try {
+      await chatService.deleteChat(selectedChat.id);
+      setChats(prevChats => prevChats.filter(chat => chat.id !== selectedChat.id));
+      setSelectedChat(null);
+      toast.success('Chat deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      toast.error('Failed to delete chat');
+    }
   };
 
   return (
@@ -28,15 +69,42 @@ const Chat = () => {
               </button>
               
               <div className="flex-1 overflow-y-auto mt-4 pr-0.5 mb-16">
-                <div className="text-sm text-gray-500 text-center">
-                  No chats yet
-                </div>
-                {/* Test content for scrolling */}
-                {[...Array(40)].map((_, i) => (
-                  <div key={i} className="mt-2 p-2 border rounded">
-                    Chat {i + 1}
+                {isLoading ? (
+                  <div className="text-sm text-gray-500 text-center">
+                    Loading chats...
                   </div>
-                ))}
+                ) : chats.length === 0 ? (
+                  <div className="text-sm text-gray-500 text-center">
+                    No chats yet
+                  </div>
+                ) : (
+                  chats.map((chat) => (
+                    <div 
+                      key={chat.id} 
+                      className="mt-2 p-2 border rounded hover:bg-base-200 cursor-pointer group"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-medium">{chat.title}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(chat.last_modified).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedChat(chat);
+                          }}
+                          className="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -132,6 +200,13 @@ const Chat = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateChat}
+      />
+
+      <DeleteChatModal
+        isOpen={!!selectedChat}
+        onClose={() => setSelectedChat(null)}
+        onConfirm={handleDeleteChat}
+        chatTitle={selectedChat?.title}
       />
     </div>
   );
