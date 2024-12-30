@@ -43,5 +43,37 @@ export const chatService = {
     if (!response.ok) {
       throw new Error('Failed to delete chat');
     }
+  },
+
+  async sendMessage(chatId, content) {
+    const response = await fetch(`${API_URL}/chats/${chatId}/messages`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to send message');
+    }
+
+    return await response.json();
+  },
+
+  async getChatMessages(chatId) {
+    const response = await fetch(`${API_URL}/chats/${chatId}/messages`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch messages');
+    }
+
+    return await response.json();
   }
 }; 
