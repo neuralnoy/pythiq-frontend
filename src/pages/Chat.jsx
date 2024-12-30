@@ -69,7 +69,7 @@ const Chat = () => {
       setIsSending(true);
       const response = await chatService.sendMessage(selectedChat.id, inputMessage.trim());
       
-      setMessages(prev => [...prev, ...response.messages]);
+      setMessages(prev => [...prev, response.user_message, response.assistant_message]);
       setInputMessage('');
     } catch (error) {
       console.error('Failed to send message:', error);
