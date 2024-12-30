@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PlusIcon, GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,6 +7,75 @@ import { Link } from 'react-router-dom';
 import { chatService } from '../services/chatService';
 import { toast } from 'react-hot-toast';
 import DeleteChatModal from '../components/chat/DeleteChatModal';
+
+const TypewriterMessage = ({ content, isNewMessage }) => {
+  const [displayedContent, setDisplayedContent] = useState('');
+  const [isTyping, setIsTyping] = useState(isNewMessage);
+  const messageEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (!isNewMessage) {
+      setDisplayedContent(content);
+      return;
+    }
+
+    let index = 0;
+    setIsTyping(true);
+    setDisplayedContent('');
+
+    const interval = setInterval(() => {
+      if (index < content.length) {
+        setDisplayedContent((prev) => prev + content[index]);
+        index++;
+        scrollToBottom();
+      } else {
+        setIsTyping(false);
+        clearInterval(interval);
+      }
+    }, 2);
+
+    return () => clearInterval(interval);
+  }, [content, isNewMessage]);
+
+  return (
+    <div className="prose max-w-none">
+      {isTyping ? (
+        <div className="whitespace-pre-wrap">
+          {displayedContent}
+          <span className="animate-pulse">▋</span>
+          <div ref={messageEndRef} />
+        </div>
+      ) : (
+        <>
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-4 mb-2" {...props} />,
+              h3: ({node, ...props}) => <h3 className="text-base font-bold mt-3 mb-2" {...props} />,
+              p: ({node, ...props}) => <p className="mb-2" {...props} />,
+              ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2" {...props} />,
+              ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2" {...props} />,
+              li: ({node, ...props}) => <li className="mb-1" {...props} />,
+              code: ({node, inline, ...props}) => 
+                inline ? (
+                  <code className="bg-base-300 px-1 rounded" {...props} />
+                ) : (
+                  <code className="block bg-base-300 p-2 rounded" {...props} />
+                ),
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+          <div ref={messageEndRef} />
+        </>
+      )}
+    </div>
+  );
+};
 
 const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -18,6 +87,16 @@ const Chat = () => {
   const [isSending, setIsSending] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
   const [chatToDelete, setChatToDelete] = useState(null);
+  const [lastMessageId, setLastMessageId] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     loadChats();
@@ -76,6 +155,7 @@ const Chat = () => {
       setIsSending(true);
       const response = await chatService.sendMessage(selectedChat.id, inputMessage.trim());
       
+      setLastMessageId(response.assistant_message.id);
       setMessages(prev => [...prev, response.user_message, response.assistant_message]);
       setInputMessage('');
       
@@ -91,6 +171,7 @@ const Chat = () => {
 
   const handleSelectChat = async (chat) => {
     setSelectedChat(chat);
+    setLastMessageId(null);
     try {
       const chatMessages = await chatService.getChatMessages(chat.id);
       setMessages(chatMessages);
@@ -230,34 +311,14 @@ const Chat = () => {
               key={index} 
               className={`chat ${message.role === 'user' ? 'chat-end' : 'chat-start'} mb-4`}
             >
-              <div className={`chat-bubble ${message.role === 'user' ? 'chat-bubble-primary' : ''} prose max-w-none`}>
+              <div className={`chat-bubble ${message.role === 'user' ? 'chat-bubble-primary' : ''}`}>
                 {message.role === 'user' ? (
                   message.content
                 ) : (
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      // Override to add custom styling
-                      h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-4 mb-2" {...props} />,
-                      h3: ({node, ...props}) => <h3 className="text-base font-bold mt-3 mb-2" {...props} />,
-                      p: ({node, ...props}) => <p className="mb-2" {...props} />,
-                      ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2" {...props} />,
-                      ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2" {...props} />,
-                      li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                      code: ({node, inline, ...props}) => 
-                        inline ? (
-                          <code className="bg-base-300 px-1 rounded" {...props} />
-                        ) : (
-                          <code className="block bg-base-300 p-2 rounded my-2 whitespace-pre-wrap" {...props} />
-                        ),
-                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary pl-4 my-2" {...props} />,
-                      table: ({node, ...props}) => <table className="table table-compact w-full my-2" {...props} />,
-                      th: ({node, ...props}) => <th className="bg-base-300" {...props} />,
-                      td: ({node, ...props}) => <td className="border-t border-base-300" {...props} />
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
+                  <TypewriterMessage 
+                    content={message.content} 
+                    isNewMessage={message.id === lastMessageId}
+                  />
                 )}
               </div>
             </div>
@@ -269,6 +330,7 @@ const Chat = () => {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
         
         {/* Chat Input Bar */}
