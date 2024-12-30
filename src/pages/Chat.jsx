@@ -24,6 +24,10 @@ const Chat = () => {
   const loadChats = async () => {
     try {
       const fetchedChats = await chatService.getChats();
+      console.log('Fetched chats with dates:', fetchedChats.map(chat => ({
+        title: chat.title,
+        last_modified: chat.last_modified
+      })));
       setChats(fetchedChats);
     } catch (error) {
       console.error('Failed to load chats:', error);
@@ -71,6 +75,9 @@ const Chat = () => {
       
       setMessages(prev => [...prev, response.user_message, response.assistant_message]);
       setInputMessage('');
+      
+      // Reload chats to get updated last_modified timestamp
+      loadChats();
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error('Failed to send message');
@@ -131,7 +138,22 @@ const Chat = () => {
                         <div>
                           <div className="font-medium">{chat.title}</div>
                           <div className="text-xs text-gray-500">
-                            {new Date(chat.last_modified).toLocaleDateString()}
+                            {chat.last_modified ? (
+                              (() => {
+                                try {
+                                  return new Date(chat.last_modified).toLocaleString(undefined, {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  });
+                                } catch (e) {
+                                  console.error('Error parsing date:', chat.last_modified, e);
+                                  return 'Invalid date';
+                                }
+                              })()
+                            ) : 'No date available'}
                           </div>
                         </div>
                         <button 
