@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { PlusIcon, GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import CreateChatModal from '../components/chat/CreateChatModal';
 import { Link } from 'react-router-dom';
 import { chatService } from '../services/chatService';
@@ -52,20 +55,28 @@ const TypewriterMessage = ({ content, isNewMessage }) => {
       ) : (
         <>
           <ReactMarkdown 
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
             components={{
               h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-4 mb-2" {...props} />,
               h3: ({node, ...props}) => <h3 className="text-base font-bold mt-3 mb-2" {...props} />,
               p: ({node, ...props}) => <p className="mb-2" {...props} />,
               ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2" {...props} />,
-              ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2" {...props} />,
               li: ({node, ...props}) => <li className="mb-1" {...props} />,
-              code: ({node, inline, ...props}) => 
-                inline ? (
+              code: ({node, inline, className, ...props}) => {
+                const match = /language-(\w+)/.exec(className || '');
+                const lang = match && match[1];
+                
+                if (lang === 'math') {
+                  return <div className="my-2 overflow-x-auto">{props.children}</div>;
+                }
+                
+                return inline ? (
                   <code className="bg-base-300 px-1 rounded" {...props} />
                 ) : (
                   <code className="block bg-base-300 p-2 rounded" {...props} />
-                ),
+                );
+              },
             }}
           >
             {content}
