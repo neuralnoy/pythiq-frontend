@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { PlusIcon, GlobeAltIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, GlobeAltIcon, TrashIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import CreateChatModal from '../components/chat/CreateChatModal';
+import DeleteChatModal from '../components/chat/DeleteChatModal';
+import ChatLibrariesModal from '../components/chat/ChatLibrariesModal';
 import { Link } from 'react-router-dom';
 import { chatService } from '../services/chatService';
 import { toast } from 'react-hot-toast';
-import DeleteChatModal from '../components/chat/DeleteChatModal';
 
 const TypewriterMessage = ({ content, isNewMessage }) => {
   const [displayedContent, setDisplayedContent] = useState('');
@@ -99,6 +100,7 @@ const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [chatToDelete, setChatToDelete] = useState(null);
   const [lastMessageId, setLastMessageId] = useState(null);
+  const [showLibrariesModal, setShowLibrariesModal] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -251,15 +253,29 @@ const Chat = () => {
                             ) : 'No date available'}
                           </div>
                         </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setChatToDelete(chat);
-                          }}
-                          className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-1">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowLibrariesModal(true);
+                              setSelectedChat(chat);
+                            }}
+                            className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100"
+                            title="View Bookshelves"
+                          >
+                            <RectangleStackIcon className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setChatToDelete(chat);
+                            }}
+                            className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100"
+                            title="Delete Chat"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -394,6 +410,12 @@ const Chat = () => {
         onClose={() => setChatToDelete(null)}
         onConfirm={handleDeleteChat}
         chatTitle={chatToDelete?.title}
+      />
+
+      <ChatLibrariesModal
+        isOpen={showLibrariesModal}
+        onClose={() => setShowLibrariesModal(false)}
+        knowledgeBaseIds={selectedChat?.knowledge_base_ids || []}
       />
     </div>
   );
