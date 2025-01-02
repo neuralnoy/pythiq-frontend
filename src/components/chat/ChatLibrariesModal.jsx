@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { documentService } from '../../services/documentService';
 import { knowledgeBaseService } from '../../services/knowledgeBaseService';
 
 const ChatLibrariesModal = ({ isOpen, onClose, knowledgeBaseIds }) => {
   const [libraryDocuments, setLibraryDocuments] = useState({});
   const [knowledgeBases, setKnowledgeBases] = useState({});
+  const [errors, setErrors] = useState({});
+  const [documentErrors, setDocumentErrors] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -13,6 +15,8 @@ const ChatLibrariesModal = ({ isOpen, onClose, knowledgeBaseIds }) => {
       if (!isOpen || !knowledgeBaseIds?.length) return;
       
       setIsLoading(true);
+      setErrors({});
+      setDocumentErrors({});
       try {
         // Fetch all knowledge bases first
         const allKnowledgeBases = await knowledgeBaseService.getKnowledgeBases();
@@ -24,11 +28,49 @@ const ChatLibrariesModal = ({ isOpen, onClose, knowledgeBaseIds }) => {
 
         // Then fetch documents for each knowledge base
         const documents = {};
+        const newErrors = {};
+        const newDocErrors = {};
+        
         for (const kbId of knowledgeBaseIds) {
-          const docs = await documentService.getDocuments(kbId);
-          documents[kbId] = docs.filter(doc => doc.enabled);
+          try {
+            if (!kbMap[kbId]) {
+              newErrors[kbId] = 'Bookshelf no longer exists';
+              continue;
+            }
+            const docs = await documentService.getDocuments(kbId);
+            const enabledDocs = docs.filter(doc => doc.enabled);
+            const disabledDocs = docs.filter(doc => !doc.enabled);
+            
+            if (disabledDocs.length > 0) {
+              newDocErrors[kbId] = {
+                type: 'disabled',
+                count: disabledDocs.length,
+                message: `${disabledDocs.length} document${disabledDocs.length > 1 ? 's' : ''} disabled`
+              };
+            }
+            
+            if (docs.length === 0) {
+              newDocErrors[kbId] = {
+                type: 'deleted',
+                message: 'All documents have been deleted'
+              };
+            } else if (enabledDocs.length === 0) {
+              newDocErrors[kbId] = {
+                type: 'all_disabled',
+                message: 'All documents are disabled'
+              };
+            }
+            
+            documents[kbId] = enabledDocs;
+          } catch (error) {
+            console.error(`Failed to fetch documents for bookshelf ${kbId}:`, error);
+            newErrors[kbId] = 'Failed to load documents';
+          }
         }
+        
         setLibraryDocuments(documents);
+        setErrors(newErrors);
+        setDocumentErrors(newDocErrors);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -59,18 +101,37 @@ const ChatLibrariesModal = ({ isOpen, onClose, knowledgeBaseIds }) => {
           <div className="space-y-6">
             {knowledgeBaseIds.map((kbId) => (
               <div key={kbId} className="space-y-2">
-                <h4 className="font-semibold text-primary">
-                  {knowledgeBases[kbId]?.title || 'Unknown Bookshelf'}
-                </h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-primary">
+                    {knowledgeBases[kbId]?.title || 'Unknown Bookshelf'}
+                  </h4>
+                  {(errors[kbId] || documentErrors[kbId]) && (
+                    <div className="tooltip" data-tip={errors[kbId] || documentErrors[kbId]?.message}>
+                      <ExclamationTriangleIcon className="w-5 h-5 text-warning" />
+                    </div>
+                  )}
+                </div>
                 <div className="pl-4 space-y-1">
-                  {!libraryDocuments[kbId] || libraryDocuments[kbId].length === 0 ? (
-                    <p className="text-sm text-gray-500">No enabled documents</p>
+                  {errors[kbId] ? (
+                    <p className="text-sm text-warning">{errors[kbId]}</p>
+                  ) : documentErrors[kbId]?.type === 'deleted' || documentErrors[kbId]?.type === 'all_disabled' ? (
+                    <p className="text-sm text-warning">{documentErrors[kbId].message}</p>
                   ) : (
-                    libraryDocuments[kbId].map(doc => (
-                      <div key={doc.id} className="text-sm">
-                        • {doc.name}
-                      </div>
-                    ))
+                    <>
+                      {libraryDocuments[kbId]?.map(doc => (
+                        <div key={doc.id} className="text-sm">
+                          • {doc.name}
+                        </div>
+                      ))}
+                      {documentErrors[kbId]?.type === 'disabled' && (
+                        <p className="text-sm text-warning mt-2">
+                          {documentErrors[kbId].message}
+                        </p>
+                      )}
+                      {(!libraryDocuments[kbId] || libraryDocuments[kbId].length === 0) && !documentErrors[kbId] && (
+                        <p className="text-sm text-gray-500">No enabled documents</p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
