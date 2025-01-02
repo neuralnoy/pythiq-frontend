@@ -212,16 +212,6 @@ const Chat = () => {
                 <PlusIcon className="w-4 h-4" />
                 New Chat
               </button>
-              
-              {selectedChat && (
-                <button 
-                  className="btn btn-ghost btn-sm rounded-full w-28 gap-2 mt-2"
-                  onClick={() => setShowLibrariesModal(true)}
-                >
-                  <RectangleStackIcon className="w-4 h-4" />
-                  Libraries
-                </button>
-              )}
 
               <div className="flex-1 overflow-y-auto mt-4 pr-0.5 mb-16">
                 {isLoading ? (
