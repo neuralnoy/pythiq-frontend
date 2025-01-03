@@ -49,7 +49,7 @@ const Usage = () => {
   const formatXAxis = (timestamp) => {
     const date = new Date(timestamp);
     if (selectedWindow === '1d') {
-      return date.toLocaleDateString('en-US', { day: 'numeric' });
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
