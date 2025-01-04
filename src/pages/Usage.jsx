@@ -12,7 +12,7 @@ import {
   Legend
 } from 'recharts';
 import toast from 'react-hot-toast';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, getDaysInMonth, startOfMonth, addDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 
 const Usage = () => {
@@ -24,6 +24,21 @@ const Usage = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Function to generate all days in the selected month
+  const generateMonthDays = (yearMonth) => {
+    const [year, month] = yearMonth.split('-').map(Number);
+    const startDate = startOfMonth(new Date(year, month - 1));
+    const daysInMonth = getDaysInMonth(startDate);
+    
+    return Array.from({ length: daysInMonth }, (_, index) => {
+      const date = addDays(startDate, index);
+      return {
+        timestamp: format(date, 'yyyy-MM-dd') + 'T00:00:00Z',
+        total_tokens: 0
+      };
+    });
+  };
 
   useEffect(() => {
     const fetchUsageData = async () => {
@@ -46,55 +61,50 @@ const Usage = () => {
           withCredentials: true
         });
 
-        console.log('Raw chat data:', chatResponse.data);
-        console.log('Raw doc data:', docResponse.data);
+        // Generate all days of the month
+        const allDays = generateMonthDays(selectedMonth);
+        const daysMap = new Map(allDays.map(day => [day.timestamp.split('T')[0], day]));
 
-        // Process chat data (timestamps with Z suffix)
-        const chatData = chatResponse.data.map(item => {
-          // For dates without time, append T00:00:00Z to treat as UTC midnight
+        // Process chat data
+        chatResponse.data.forEach(item => {
           const timestamp = item.timestamp.includes('T') 
             ? item.timestamp 
             : `${item.timestamp}T00:00:00Z`;
-          return {
-            timestamp,
-            total_tokens: item.total_tokens
-          };
-        }).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-        // Process document data (timestamps without Z suffix)
-        const docData = docResponse.data.map(item => {
-          // For dates without time, append T00:00:00Z to treat as UTC midnight
-          const timestamp = item.timestamp.includes('T') 
-            ? item.timestamp 
-            : `${item.timestamp}T00:00:00Z`;
-          return {
-            timestamp,
-            total_tokens: item.total_tokens
-          };
+          const dateKey = timestamp.split('T')[0];
+          if (daysMap.has(dateKey)) {
+            daysMap.set(dateKey, {
+              timestamp: timestamp,
+              total_tokens: item.total_tokens
+            });
+          }
         });
 
-        // Aggregate document data by local day
-        const docAggregated = docData.reduce((acc, item) => {
-          const date = parseISO(item.timestamp);
+        // Convert map back to array and sort by date
+        const chatData = Array.from(daysMap.values())
+          .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+        // Process document data with all days
+        const docDaysMap = new Map(generateMonthDays(selectedMonth).map(day => [day.timestamp.split('T')[0], day]));
+
+        docResponse.data.forEach(item => {
+          const timestamp = item.timestamp.includes('T') 
+            ? item.timestamp 
+            : `${item.timestamp}T00:00:00Z`;
+          const date = parseISO(timestamp);
           const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-          const key = format(localDate, 'yyyy-MM-dd');
+          const dateKey = format(localDate, 'yyyy-MM-dd');
           
-          if (!acc[key]) {
-            acc[key] = {
-              timestamp: key + 'T00:00:00Z',
-              total_tokens: 0
-            };
+          if (docDaysMap.has(dateKey)) {
+            const existing = docDaysMap.get(dateKey);
+            docDaysMap.set(dateKey, {
+              timestamp: existing.timestamp,
+              total_tokens: (existing.total_tokens || 0) + item.total_tokens
+            });
           }
-          acc[key].total_tokens += item.total_tokens;
-          return acc;
-        }, {});
+        });
 
-        const docDataAggregated = Object.values(docAggregated).sort((a, b) => 
-          a.timestamp.localeCompare(b.timestamp)
-        );
-
-        console.log('Final processed chat data:', chatData);
-        console.log('Final processed doc data:', docDataAggregated);
+        const docDataAggregated = Array.from(docDaysMap.values())
+          .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         setChatUsageData(chatData);
         setDocumentUsageData(docDataAggregated);
@@ -188,113 +198,261 @@ const Usage = () => {
           </select>
         </div>
 
-        {/* Chat Token Usage Chart */}
-        <div className="card bg-base-100 shadow-xl mb-8">
-          <div className="card-body">
-            <h2 className="card-title mb-4">Chat Token Usage</h2>
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <span className="loading loading-spinner loading-lg"></span>
-              </div>
-            ) : (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={chatUsageData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid 
-                      vertical={false}
-                      stroke="#e5e7eb"
-                    />
-                    <XAxis
-                      dataKey="timestamp"
-                      tickFormatter={formatXAxis}
-                      stroke="hsl(var(--bc) / 0.5)"
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--bc) / 0.5)"
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={formatYAxis}
-                    />
-                    <Tooltip
-                      labelFormatter={formatTooltipLabel}
-                      formatter={(value) => [formatYAxis(value), 'Total Tokens']}
-                    />
-                    <Area 
-                      type="monotone"
-                      dataKey="total_tokens" 
-                      stroke="oklch(var(--p))"
-                      fill="oklch(var(--p) / 0.2)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Chat Token Usage Chart */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title mb-4 text-sm">Chat Token Usage</h2>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              ) : (
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chatUsageData}
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid 
+                        vertical={false}
+                        horizontal={true}
+                        stroke="#e5e7eb"
+                      />
+                      <XAxis
+                        dataKey="timestamp"
+                        tickFormatter={formatXAxis}
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={formatYAxis}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <Tooltip
+                        labelFormatter={formatTooltipLabel}
+                        formatter={(value) => [formatYAxis(value), 'Total Tokens']}
+                        contentStyle={{ fontSize: '0.75rem' }}
+                      />
+                      <Area 
+                        type="monotone"
+                        dataKey="total_tokens" 
+                        stroke="oklch(var(--p))"
+                        fill="oklch(var(--p) / 0.2)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Document Token Usage Chart */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title mb-4 text-sm">Document Processing Token Usage</h2>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              ) : (
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={documentUsageData}
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid 
+                        vertical={false}
+                        horizontal={true}
+                        stroke="#e5e7eb"
+                      />
+                      <XAxis
+                        dataKey="timestamp"
+                        tickFormatter={formatXAxis}
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={formatYAxis}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <Tooltip
+                        labelFormatter={formatTooltipLabel}
+                        formatter={(value) => [formatYAxis(value), 'Total Tokens']}
+                        contentStyle={{ fontSize: '0.75rem' }}
+                      />
+                      <Area 
+                        type="monotone"
+                        dataKey="total_tokens" 
+                        stroke="oklch(var(--p))"
+                        fill="oklch(var(--p) / 0.2)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Document Token Usage Chart */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title mb-4">Document Processing Token Usage</h2>
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <span className="loading loading-spinner loading-lg"></span>
-              </div>
-            ) : (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={documentUsageData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid 
-                      vertical={false}
-                      stroke="#e5e7eb"
-                    />
-                    <XAxis
-                      dataKey="timestamp"
-                      tickFormatter={formatXAxis}
-                      stroke="hsl(var(--bc) / 0.5)"
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--bc) / 0.5)"
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={formatYAxis}
-                    />
-                    <Tooltip
-                      labelFormatter={formatTooltipLabel}
-                      formatter={(value) => [formatYAxis(value), 'Total Tokens']}
-                    />
-                    <Area 
-                      type="monotone"
-                      dataKey="total_tokens" 
-                      stroke="oklch(var(--p))"
-                      fill="oklch(var(--p) / 0.2)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+        {/* Combined Daily Usage Chart */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title mb-4 text-sm">Total Daily Token Usage</h2>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              ) : (
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chatUsageData.map((item, index) => ({
+                        timestamp: item.timestamp,
+                        total_tokens: item.total_tokens + (documentUsageData[index]?.total_tokens || 0)
+                      }))}
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid 
+                        vertical={false}
+                        horizontal={true}
+                        stroke="#e5e7eb"
+                      />
+                      <XAxis
+                        dataKey="timestamp"
+                        tickFormatter={formatXAxis}
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={formatYAxis}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <Tooltip
+                        labelFormatter={formatTooltipLabel}
+                        formatter={(value) => [formatYAxis(value), 'Total Tokens']}
+                        contentStyle={{ fontSize: '0.75rem' }}
+                      />
+                      <Area 
+                        type="monotone"
+                        dataKey="total_tokens" 
+                        stroke="oklch(var(--p))"
+                        fill="oklch(var(--p) / 0.2)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Cumulative Usage Chart */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title mb-4 text-sm">Cumulative Token Usage</h2>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              ) : (
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chatUsageData.map((item, index) => {
+                        const dailyTotal = item.total_tokens + (documentUsageData[index]?.total_tokens || 0);
+                        let cumulative = dailyTotal;
+                        if (index > 0) {
+                          // Get the previous cumulative value
+                          const prevData = chatUsageData.map((item, i) => {
+                            if (i >= index) return 0;
+                            return item.total_tokens + (documentUsageData[i]?.total_tokens || 0);
+                          }).reduce((sum, current) => sum + current, 0);
+                          cumulative += prevData;
+                        }
+                        return {
+                          timestamp: item.timestamp,
+                          total_tokens: cumulative
+                        };
+                      })}
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid 
+                        vertical={false}
+                        horizontal={true}
+                        stroke="#e5e7eb"
+                      />
+                      <XAxis
+                        dataKey="timestamp"
+                        tickFormatter={formatXAxis}
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--bc) / 0.5)"
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={formatYAxis}
+                        style={{ fontSize: '0.75rem' }}
+                      />
+                      <Tooltip
+                        labelFormatter={formatTooltipLabel}
+                        formatter={(value) => [formatYAxis(value), 'Cumulative Tokens']}
+                        contentStyle={{ fontSize: '0.75rem' }}
+                      />
+                      <Area 
+                        type="monotone"
+                        dataKey="total_tokens" 
+                        stroke="oklch(var(--p))"
+                        fill="oklch(var(--p) / 0.2)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
