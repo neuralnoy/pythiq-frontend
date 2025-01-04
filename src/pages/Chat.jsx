@@ -393,7 +393,7 @@ const Chat = () => {
               </button>
             </form>
             <p className="text-xs text-gray-500 mt-2 text-center">
-              PythiQ can make mistakes. <Link to="/terms" className="link link-primary">Check Terms and Policies</Link>.
+              PythiQ can make mistakes, including about people and facts, so double-check it. <Link to="/terms" className="link link-primary">Your Terms and Policies</Link>.
             </p>
           </div>
         </div>
