@@ -18,6 +18,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 const Usage = () => {
   const [chatUsageData, setChatUsageData] = useState([]);
   const [documentUsageData, setDocumentUsageData] = useState([]);
+  const [totalMonthlyTokens, setTotalMonthlyTokens] = useState(0);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -106,6 +107,24 @@ const Usage = () => {
         const docDataAggregated = Array.from(docDaysMap.values())
           .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
+        // Calculate cumulative totals for the month
+        const combinedData = chatData.map((item, index) => {
+          const dailyTotal = item.total_tokens + (docDataAggregated[index]?.total_tokens || 0);
+          let cumulative = dailyTotal;
+          if (index > 0) {
+            const prevData = chatData.map((item, i) => {
+              if (i >= index) return 0;
+              return item.total_tokens + (docDataAggregated[i]?.total_tokens || 0);
+            }).reduce((sum, current) => sum + current, 0);
+            cumulative += prevData;
+          }
+          return cumulative;
+        });
+
+        // Get the last cumulative total
+        const monthEndTotal = combinedData[combinedData.length - 1] || 0;
+        setTotalMonthlyTokens(monthEndTotal);
+
         setChatUsageData(chatData);
         setDocumentUsageData(docDataAggregated);
       } catch (error) {
@@ -153,6 +172,19 @@ const Usage = () => {
     return value;
   };
 
+  const calculateCost = (totalTokens) => {
+    const freeTokens = 5000000; // 5M tokens included in base fee
+    const baseFee = 20; // $20 base fee
+    const additionalTokens = Math.max(0, totalTokens - freeTokens);
+    const additionalCost = (additionalTokens / 1000000) * 5; // $5 per million tokens, proportionally calculated
+    const totalCost = +(baseFee + additionalCost).toFixed(2); // Round to 2 decimal places
+    return {
+      total: totalCost,
+      base: baseFee,
+      additional: +additionalCost.toFixed(2)
+    };
+  };
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -179,7 +211,35 @@ const Usage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-between items-center mb-8">
+          <div className="card bg-base-100 shadow-xl p-4">
+            <div className="text-sm font-semibold mb-2">Monthly Cost Estimation</div>
+            <div className="stats shadow">
+              <div className="stat">
+                <div className="stat-title">Total Tokens</div>
+                <div className="stat-value text-primary">{formatYAxis(totalMonthlyTokens)}</div>
+                <div className="stat-desc">
+                  {totalMonthlyTokens > 5000000 
+                    ? `${formatYAxis(totalMonthlyTokens - 5000000)} tokens over free tier` 
+                    : `${formatYAxis(5000000 - totalMonthlyTokens)} tokens remaining in free tier`}
+                </div>
+              </div>
+              <div className="stat">
+                <div className="stat-title">Estimated Cost</div>
+                {(() => {
+                  const cost = calculateCost(totalMonthlyTokens);
+                  return (
+                    <>
+                      <div className="stat-value text-secondary">${cost.total}</div>
+                      <div className="stat-desc">
+                        Base: ${cost.base} + Additional: ${cost.additional}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
           <select
             className="select select-bordered w-full max-w-xs"
             value={selectedMonth}
