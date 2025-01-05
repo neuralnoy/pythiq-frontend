@@ -368,13 +368,13 @@ const Chat = () => {
                 key={index} 
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 max-w-4xl mx-auto`}
               >
-                <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-3 ${message.role === 'user' ? 'w-auto ml-auto' : 'w-full'}`}>
+                <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-3 ${message.role === 'user' ? 'w-auto ml-auto max-w-[75%]' : 'w-full'}`}>
                   {message.role === 'assistant' && (
                     <div className="w-8 h-8 shrink-0">
                       <Logo />
                     </div>
                   )}
-                  <div className={`${message.role === 'user' ? 'bg-primary text-primary-content' : 'bg-base-200'} p-4 rounded-lg ${message.role === 'user' ? 'w-auto' : 'flex-1'}`}>
+                  <div className={`${message.role === 'user' ? 'bg-primary text-primary-content' : 'bg-base-200'} p-4 rounded-lg ${message.role === 'user' ? 'w-full' : 'flex-1'}`}>
                     {message.role === 'user' ? (
                       message.content
                     ) : (
