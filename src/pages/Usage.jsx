@@ -63,18 +63,19 @@ const Usage = () => {
 
         // Generate all days of the month
         const allDays = generateMonthDays(selectedMonth);
-        const daysMap = new Map(allDays.map(day => [day.timestamp.split('T')[0], day]));
+        const daysMap = new Map(allDays.map(day => [day.timestamp.split('T')[0], { ...day }]));
 
-        // Process chat data
+        // Process chat data - convert UTC to local time and aggregate by day
         chatResponse.data.forEach(item => {
-          const timestamp = item.timestamp.includes('T') 
-            ? item.timestamp 
-            : `${item.timestamp}T00:00:00Z`;
-          const dateKey = timestamp.split('T')[0];
+          const utcDate = parseISO(item.timestamp);
+          const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
+          const dateKey = format(localDate, 'yyyy-MM-dd');
+          
           if (daysMap.has(dateKey)) {
+            const existing = daysMap.get(dateKey);
             daysMap.set(dateKey, {
-              timestamp: timestamp,
-              total_tokens: item.total_tokens
+              timestamp: existing.timestamp,
+              total_tokens: (existing.total_tokens || 0) + item.total_tokens
             });
           }
         });
@@ -83,15 +84,12 @@ const Usage = () => {
         const chatData = Array.from(daysMap.values())
           .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-        // Process document data with all days
-        const docDaysMap = new Map(generateMonthDays(selectedMonth).map(day => [day.timestamp.split('T')[0], day]));
+        // Process document data - convert UTC to local time and aggregate by day
+        const docDaysMap = new Map(generateMonthDays(selectedMonth).map(day => [day.timestamp.split('T')[0], { ...day }]));
 
         docResponse.data.forEach(item => {
-          const timestamp = item.timestamp.includes('T') 
-            ? item.timestamp 
-            : `${item.timestamp}T00:00:00Z`;
-          const date = parseISO(timestamp);
-          const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+          const utcDate = parseISO(item.timestamp);
+          const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
           const dateKey = format(localDate, 'yyyy-MM-dd');
           
           if (docDaysMap.has(dateKey)) {
@@ -106,24 +104,12 @@ const Usage = () => {
         const docDataAggregated = Array.from(docDaysMap.values())
           .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-        // Calculate cumulative totals for the month
-        const combinedData = chatData.map((item, index) => {
-          const dailyTotal = item.total_tokens + (docDataAggregated[index]?.total_tokens || 0);
-          let cumulative = dailyTotal;
-          if (index > 0) {
-            const prevData = chatData.map((item, i) => {
-              if (i >= index) return 0;
-              return item.total_tokens + (docDataAggregated[i]?.total_tokens || 0);
-            }).reduce((sum, current) => sum + current, 0);
-            cumulative += prevData;
-          }
-          return cumulative;
-        });
+        // Calculate total monthly tokens
+        const monthlyTotal = chatData.reduce((sum, item, index) => {
+          return sum + item.total_tokens + (docDataAggregated[index]?.total_tokens || 0);
+        }, 0);
 
-        // Get the last cumulative total
-        const monthEndTotal = combinedData[combinedData.length - 1] || 0;
-        setTotalMonthlyTokens(monthEndTotal);
-
+        setTotalMonthlyTokens(monthlyTotal);
         setChatUsageData(chatData);
         setDocumentUsageData(docDataAggregated);
       } catch (error) {
