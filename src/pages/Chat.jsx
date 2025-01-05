@@ -103,6 +103,7 @@ const Chat = () => {
   const [lastMessageId, setLastMessageId] = useState(null);
   const [showLibrariesModal, setShowLibrariesModal] = useState(false);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -173,6 +174,20 @@ const Chat = () => {
       setMessages(prev => [...prev, response.user_message, response.assistant_message]);
       setInputMessage('');
       
+      // Reset textarea height and scroll position
+      if (textareaRef.current) {
+        textareaRef.current.style.height = '';
+        textareaRef.current.style.height = '2.5rem';
+        textareaRef.current.scrollTop = 0;
+        // Force a reflow to remove scrollbar
+        textareaRef.current.style.overflow = 'hidden';
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.style.overflow = 'auto';
+          }
+        }, 0);
+      }
+      
       // Reload chats to get updated last_modified timestamp
       loadChats();
     } catch (error) {
@@ -181,6 +196,19 @@ const Chat = () => {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  const adjustTextareaHeight = (e) => {
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
   };
 
   const handleSelectChat = async (chat) => {
@@ -379,33 +407,41 @@ const Chat = () => {
         <div className="bg-base-100 p-4 border-t">
           <div className="container mx-auto max-w-4xl">
             <form className="relative" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your message..."
-                className="input input-bordered w-full pr-12"
-                disabled={!selectedChat || isSending}
-              />
-              <button 
-                type="submit" 
-                className={`absolute right-3 top-1/2 translate-y-[-50%] p-2 rounded-full transition-all duration-200
-                  ${isSending ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 active:scale-105'}`}
-                disabled={!selectedChat || isSending}
-              >
-                {isSending ? (
-                  <div className="loading loading-spinner loading-xs"></div>
-                ) : (
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 24 24" 
-                    fill="currentColor" 
-                    className="w-5 h-5 text-primary"
-                  >
-                    <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                  </svg>
-                )}
-              </button>
+              <div className="relative flex items-center">
+                <textarea
+                  ref={textareaRef}
+                  value={inputMessage}
+                  onChange={(e) => {
+                    setInputMessage(e.target.value);
+                    adjustTextareaHeight(e);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message..."
+                  className="textarea textarea-bordered w-full pr-12 min-h-[2.5rem] max-h-[200px] resize-none overflow-hidden leading-6"
+                  style={{ overflowY: inputMessage.includes('\n') ? 'auto' : 'hidden' }}
+                  disabled={!selectedChat || isSending}
+                  rows={1}
+                />
+                <button 
+                  type="submit" 
+                  className={`absolute right-3 p-2 rounded-full transition-all duration-200
+                    ${isSending ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 active:scale-105'}`}
+                  disabled={!selectedChat || isSending}
+                >
+                  {isSending ? (
+                    <div className="loading loading-spinner loading-xs"></div>
+                  ) : (
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor" 
+                      className="w-5 h-5 text-primary"
+                    >
+                      <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </form>
             <div className="text-xs text-gray-500 mt-2 text-center">
               PythiQ can make mistakes, including about people and facts, so double-check it. <Link to="/terms" className="link link-primary">Your Terms and Policies</Link>
