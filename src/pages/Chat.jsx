@@ -12,6 +12,8 @@ import { Link } from 'react-router-dom';
 import { chatService } from '../services/chatService';
 import { toast } from 'react-hot-toast';
 import { Logo } from '../components/Logo';
+import { documentService } from '../services/documentService';
+import { getFileTypeIcon } from '../utils/fileTypeIcons';
 
 const TypewriterMessage = ({ content, isNewMessage }) => {
   const [displayedContent, setDisplayedContent] = useState('');
@@ -90,7 +92,7 @@ const TypewriterMessage = ({ content, isNewMessage }) => {
   );
 };
 
-const DocumentDrawer = ({ isOpen, onToggle }) => {
+const DocumentDrawer = ({ isOpen, onToggle, documents = [] }) => {
   return (
     <div className={`transition-all duration-300 ${isOpen ? 'w-[60rem]' : 'w-16'} border-l border-base-200 flex flex-col h-full bg-base-200/50`}>
       <div className="relative flex-1">
@@ -100,7 +102,24 @@ const DocumentDrawer = ({ isOpen, onToggle }) => {
             <div className="w-72 border-r border-base-200 flex flex-col">
               <h3 className="px-4 font-semibold text-lg mt-4 mb-4">Enabled Documents</h3>
               <div className="flex-1 overflow-y-auto px-4">
-                {/* Document list will go here */}
+                {documents.length === 0 ? (
+                  <div className="text-base-content/50 text-center">
+                    No enabled documents
+                  </div>
+                ) : (
+                  documents.map((doc) => {
+                    const { icon: Icon, color } = getFileTypeIcon(doc.name);
+                    return (
+                      <div
+                        key={doc.id}
+                        className="p-2 hover:bg-base-200 rounded cursor-pointer mb-2 flex items-center gap-2"
+                      >
+                        <Icon className={`w-5 h-5 shrink-0 ${color}`} />
+                        <div className="font-medium truncate">{doc.name}</div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -141,6 +160,7 @@ const Chat = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const [enabledDocuments, setEnabledDocuments] = useState([]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -153,6 +173,14 @@ const Chat = () => {
   useEffect(() => {
     loadChats();
   }, []);
+
+  useEffect(() => {
+    if (selectedChat?.knowledge_base_ids?.length > 0) {
+      loadEnabledDocuments();
+    } else {
+      setEnabledDocuments([]);
+    }
+  }, [selectedChat]);
 
   const loadChats = async () => {
     try {
@@ -261,6 +289,21 @@ const Chat = () => {
         console.error('Failed to load messages:', error);
         toast.error('Failed to load messages');
       }
+    }
+  };
+
+  const loadEnabledDocuments = async () => {
+    try {
+      const allDocuments = await Promise.all(
+        selectedChat.knowledge_base_ids.map(async (kbId) => {
+          const docs = await documentService.getDocuments(kbId);
+          return docs.filter(doc => doc.enabled);
+        })
+      );
+      setEnabledDocuments(allDocuments.flat());
+    } catch (error) {
+      console.error('Failed to load documents:', error);
+      toast.error('Failed to load documents');
     }
   };
 
@@ -510,6 +553,7 @@ const Chat = () => {
       <DocumentDrawer 
         isOpen={isDrawerOpen}
         onToggle={() => setIsDrawerOpen(!isDrawerOpen)}
+        documents={enabledDocuments}
       />
     </div>
   );
