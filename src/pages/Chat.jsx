@@ -11,6 +11,7 @@ import ChatLibrariesModal from '../components/chat/ChatLibrariesModal';
 import { Link } from 'react-router-dom';
 import { chatService } from '../services/chatService';
 import { toast } from 'react-hot-toast';
+import { Logo } from '../components/Logo';
 
 const TypewriterMessage = ({ content, isNewMessage }) => {
   const [displayedContent, setDisplayedContent] = useState('');
@@ -199,7 +200,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {/* Sidebar */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-16'} border-r border-base-200 flex flex-col h-full bg-base-200/50`}>
         <div className={`relative flex-1`}>
@@ -331,37 +332,51 @@ const Chat = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 container mx-auto px-4 py-8 overflow-y-auto">
-          {messages.map((message, index) => (
-            <div 
-              key={index} 
-              className={`chat ${message.role === 'user' ? 'chat-end' : 'chat-start'} mb-4`}
-            >
-              <div className={`chat-bubble ${message.role === 'user' ? 'chat-bubble-primary' : ''}`}>
-                {message.role === 'user' ? (
-                  message.content
-                ) : (
-                  <TypewriterMessage 
-                    content={message.content} 
-                    isNewMessage={message.id === lastMessageId}
-                  />
-                )}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
+          <div className="absolute inset-0 container mx-auto px-4 py-8 overflow-y-auto">
+            {messages.map((message, index) => (
+              <div 
+                key={index} 
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 max-w-4xl mx-auto`}
+              >
+                <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-3 ${message.role === 'user' ? 'w-auto ml-auto' : 'w-full'}`}>
+                  {message.role === 'assistant' && (
+                    <div className="w-8 h-8 shrink-0">
+                      <Logo />
+                    </div>
+                  )}
+                  <div className={`${message.role === 'user' ? 'bg-primary text-primary-content' : 'bg-base-200'} p-4 rounded-lg ${message.role === 'user' ? 'w-auto' : 'flex-1'}`}>
+                    {message.role === 'user' ? (
+                      message.content
+                    ) : (
+                      <TypewriterMessage 
+                        content={message.content} 
+                        isNewMessage={message.id === lastMessageId}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-          {isSending && (
-            <div className="chat chat-start mb-4">
-              <div className="chat-bubble">
-                <span className="loading loading-dots loading-sm"></span>
+            ))}
+            {isSending && (
+              <div className="flex justify-start mb-4 max-w-4xl mx-auto">
+                <div className="flex flex-row items-start gap-3 w-full">
+                  <div className="w-8 h-8 shrink-0">
+                    <Logo />
+                  </div>
+                  <div className="bg-base-200 p-4 rounded-lg flex-1">
+                    <span className="loading loading-dots loading-sm"></span>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
         
         {/* Chat Input Bar */}
-        <div className="bg-base-100 p-4 mb-16">
+        <div className="bg-base-100 p-4 border-t">
           <div className="container mx-auto max-w-4xl">
             <form className="relative" onSubmit={handleSubmit}>
               <input
@@ -392,9 +407,9 @@ const Chat = () => {
                 )}
               </button>
             </form>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              PythiQ can make mistakes, including about people and facts, so double-check it. <Link to="/terms" className="link link-primary">Your Terms and Policies</Link>.
-            </p>
+            <div className="text-xs text-gray-500 mt-2 text-center">
+              PythiQ can make mistakes, including about people and facts, so double-check it. <Link to="/terms" className="link link-primary">Your Terms and Policies</Link>
+            </div>
           </div>
         </div>
       </div>
