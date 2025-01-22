@@ -100,7 +100,7 @@ const DocumentDrawer = ({ isOpen, onToggle, documents = [] }) => {
           <div className={`flex h-full transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
             {/* Files list section */}
             <div className="w-72 border-r border-base-200 flex flex-col">
-              <h3 className="px-4 font-semibold text-lg mt-4 mb-4">Enabled Documents</h3>
+              <h3 className="px-4 font-semibold text-base mt-4 mb-4">Enabled Documents</h3>
               <div className="flex-1 overflow-y-auto px-4">
                 {documents.length === 0 ? (
                   <div className="text-base-content/50 text-center">
@@ -115,7 +115,7 @@ const DocumentDrawer = ({ isOpen, onToggle, documents = [] }) => {
                         className="p-2 hover:bg-base-200 rounded cursor-pointer mb-2 flex items-center gap-2"
                       >
                         <Icon className={`w-5 h-5 shrink-0 ${color}`} />
-                        <div className="font-medium truncate">{doc.name}</div>
+                        <div className="text-sm font-medium truncate">{doc.name}</div>
                       </div>
                     );
                   })
@@ -125,7 +125,7 @@ const DocumentDrawer = ({ isOpen, onToggle, documents = [] }) => {
 
             {/* Preview section */}
             <div className="flex-1 px-6 py-4">
-              <h3 className="font-semibold text-lg mb-4">Document Preview</h3>
+              <h3 className="font-semibold text-base mb-4">Document Preview</h3>
               <div className="h-[calc(100%-3rem)] bg-base-200/50 rounded-lg flex items-center justify-center text-base-content/50">
                 Select a document to preview
               </div>
